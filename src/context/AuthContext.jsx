@@ -15,19 +15,30 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (error) {
-      console.error("Failed to parse stored user:", error);
-      localStorage.removeItem("user");
-      setUser(null);
-    } finally {
-      setLoading(false);
+  // useEffect(() => {
+  //   try {
+  //     const storedUser = localStorage.getItem("user");
+  //     if (storedUser) {
+  //       setUser(JSON.parse(storedUser));
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to parse stored user:", error);
+  //     localStorage.removeItem("user");
+  //     setUser(null);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, []);
+
+   useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    const storedUser = localStorage.getItem("user");
+
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser));
     }
+
+    setLoading(false);
   }, []);
 
   const signup = async (newUser) => {
@@ -50,42 +61,72 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
-    try {
-      const response = await api.get(`/users?email=${email}`);
-      const users = response.data;
+  // const login = async (email, password) => {
+  //   try {
+  //     const response = await api.get(`/users?email=${email}`);
+  //     const users = response.data;
 
-      if (users.length === 0 || users[0].password !== password) {
-        toast.error("Invalid email or password.");
-        return;
-      }
+  //     if (users.length === 0 || users[0].password !== password) {
+  //       toast.error("Invalid email or password.");
+  //       return;
+  //     }
 
-      const loggedInUser = users[0];
+  //     const loggedInUser = users[0];
 
-      // Check if the user's account is blocked
-      if (loggedInUser.isBlocked) {
-        toast.error("Your account has been blocked. Please contact support.");
-        return; // Prevent login
-      }
+  //     // Check if the user's account is blocked
+  //     if (loggedInUser.isBlocked) {
+  //       toast.error("Your account has been blocked. Please contact support.");
+  //       return; // Prevent login
+  //     }
 
-      setUser(loggedInUser);
-      localStorage.setItem("user", JSON.stringify(loggedInUser));
-      toast.success(`Welcome back, ${loggedInUser.name}!`);
+  //     setUser(loggedInUser);
+  //     localStorage.setItem("user", JSON.stringify(loggedInUser));
+  //     toast.success(`Welcome back, ${loggedInUser.name}!`);
       
-      if (loggedInUser.role === "admin") {
-        navigate("/dashboard");
-      } else {
-        navigate("/");
-      }
-    } catch (e) {
-      console.error("Login failed:", e);
-      toast.error("Login failed. Please try again.");
-    }
-  };
+  //     if (loggedInUser.role === "admin") {
+  //       navigate("/dashboard");
+  //     } else {
+  //       navigate("/");
+  //     }
+  //   } catch (e) {
+  //     console.error("Login failed:", e);
+  //     toast.error("Login failed. Please try again.");
+  //   }
+  // };
 
-  const logout = () => {
-    setUser(null);
+
+   const login = async (email, password) => {
+  try {
+    const res = await api.post("/auth/login", {
+      email,
+      password,
+    });
+
+    const { accessToken } = res.data.data;
+
+    localStorage.setItem("accessToken", accessToken);
+
+    const profileRes = await api.get("/users/My Profile");
+
+    setUser(profileRes.data.data);
+    localStorage.setItem("user", JSON.stringify(profileRes.data.data));
+
+    toast.success("Login successful!");
+    navigate("/");
+  } catch (err) {
+    console.error("Login failed:", err);
+    toast.error(
+      err.response?.data?.message || "Invalid email or password"
+    );
+  }
+};
+
+
+
+   const logout = () => {
+    localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
+    setUser(null);
     navigate("/login");
   };
 

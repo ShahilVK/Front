@@ -185,7 +185,7 @@ const TopProducts = () => {
     api
       .get("/products")
       .then((res) => {
-        setProducts(res.data.slice(0, 8));
+        setProducts(res.data.data.slice(0, 8));
       })
       .catch((err) => {
         console.error("Error fetching products:", err);

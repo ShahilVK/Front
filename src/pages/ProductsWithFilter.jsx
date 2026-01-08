@@ -11,7 +11,7 @@ const ProductCategories = () => {
     api.get("/products")
       .then((res) => {
         const categoryMap = {};
-        res.data.forEach((p) => {
+        res.data.data.forEach((p) => {
           if (!categoryMap[p.category]) {
             categoryMap[p.category] = p.image;
           }
