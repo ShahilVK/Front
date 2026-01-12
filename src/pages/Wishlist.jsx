@@ -1,4 +1,3 @@
-
 import React, { useContext } from "react";
 import Navbar from "../components/Navbar";
 import { useWishlist } from "../context/WishlistContext";
@@ -61,7 +60,7 @@ function Wishlist() {
 
       <main className="flex-grow pt-24 pb-12">
         <div className="max-w-6xl mx-auto px-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex justify-between items-center mb-8"
@@ -114,8 +113,8 @@ function Wishlist() {
                       <div className="relative">
                         <div className="w-full h-56 bg-gray-100 flex items-center justify-center p-4">
                           <img
-                            src={product.image}
-                            alt={product.name}
+                            src={product.imageUrl}
+                            alt={product.productName}
                             className="object-contain h-full w-full group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
@@ -130,7 +129,7 @@ function Wishlist() {
 
                       <div className="p-4 flex flex-col flex-grow">
                         <h2 className="text-lg font-semibold text-gray-800 truncate">
-                          {product.name}
+                          {product.productName}
                         </h2>
                         <p className="text-red-500 font-bold mt-1 mb-2">
                           ₹{product.price}
@@ -140,7 +139,9 @@ function Wishlist() {
                             outOfStock ? "text-red-500" : "text-green-600"
                           }`}
                         >
-                          {outOfStock ? "Out of Stock" : `In Stock: ${product.stock}`}
+                          {outOfStock
+                            ? "Out of Stock"
+                            : `In Stock: ${product.stock}`}
                         </p>
 
                         {/* ✅ Disable Add to Cart if out of stock */}
@@ -171,4 +172,3 @@ function Wishlist() {
 }
 
 export default Wishlist;
-

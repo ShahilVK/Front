@@ -1,5 +1,3 @@
-
-
 // import React, { useEffect, useState } from 'react';
 // import { useAuth } from '../context/AuthContext';
 // import api from '../Api/Axios_Instance';
@@ -92,7 +90,7 @@
 //                 <p className="text-gray-600">{user?.email}</p>
 //             </div>
 //         </div>
-        
+
 //         {orders.length === 0 ? (
 //           <div className="text-center bg-white p-10 rounded-lg shadow-md">
 //             <p className="text-gray-600 mb-4">You haven't placed any orders yet.</p>
@@ -101,7 +99,7 @@
 //             </Link>
 //           </div>
 //         ) : (
-//           <motion.div 
+//           <motion.div
 //             className="space-y-4"
 //             initial="hidden"
 //             animate="visible"
@@ -112,12 +110,12 @@
 //             {orders.map((order) => {
 //               const isExpanded = expandedOrderId === order.id;
 //               return (
-//                 <motion.div 
-//                   key={order.id} 
+//                 <motion.div
+//                   key={order.id}
 //                   className="bg-white rounded-lg shadow-md overflow-hidden"
 //                   variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
 //                 >
-//                   <div 
+//                   <div
 //                     className="p-4 cursor-pointer bg-gray-50 hover:bg-gray-100 border-b border-gray-200"
 //                     onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
 //                   >
@@ -132,7 +130,7 @@
 //                       </div>
 //                     </div>
 //                   </div>
-                  
+
 //                   <AnimatePresence>
 //                     {isExpanded && (
 //                       <motion.div
@@ -173,20 +171,18 @@
 
 // export default Orders;
 
-
-
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import api from '../Api/Axios_Instance';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Package, Check, UserCircle } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import api from "../Api/Axios_Instance";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, Package, Check, UserCircle } from "lucide-react";
 
 /* ---------------- ORDER STATUS TRACKER ---------------- */
 const OrderStatusTracker = ({ status }) => {
-  const statuses = ['Processing', 'Shipped', 'Delivered'];
+  const statuses = ["Processing", "Shipped", "Delivered"];
   const currentStatusIndex = statuses.indexOf(status);
 
   return (
@@ -198,19 +194,29 @@ const OrderStatusTracker = ({ status }) => {
             <div className="flex flex-col items-center text-center">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  isActive ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                  isActive
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-200 text-gray-500"
                 }`}
               >
-                {index < currentStatusIndex ? <Check size={18} /> : <Package size={18} />}
+                {index < currentStatusIndex ? (
+                  <Check size={18} />
+                ) : (
+                  <Package size={18} />
+                )}
               </div>
-              <p className={`mt-2 text-xs font-semibold ${isActive ? 'text-green-600' : 'text-gray-500'}`}>
+              <p
+                className={`mt-2 text-xs font-semibold ${
+                  isActive ? "text-green-600" : "text-gray-500"
+                }`}
+              >
                 {s}
               </p>
             </div>
             {index < statuses.length - 1 && (
               <div
                 className={`flex-1 h-1 mx-2 transition-all duration-300 ${
-                  isActive ? 'bg-green-500' : 'bg-gray-200'
+                  isActive ? "bg-green-500" : "bg-gray-200"
                 }`}
               />
             )}
@@ -221,23 +227,46 @@ const OrderStatusTracker = ({ status }) => {
   );
 };
 
-/* ---------------- ORDERS PAGE ---------------- */
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const { user } = useAuth();
 
-  /* ✅ FIXED: CORRECT API ENDPOINT */
+
+  const API_BASE_URL = "https://localhost:7155";
+
+const buildImageUrl = (url) => {
+  if (!url) return "/assets/no-image.png";
+  if (url.startsWith("http")) return url;
+  return `${API_BASE_URL}/${url.replace(/^\/+/, "")}`;
+};
+
+
+
+
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await api.get('/users/My Profile'); // ✅ FIX
-        const userOrders = (response.data.data.orders || []).map(order => ({
-          ...order,
-          status: ['Processing', 'Shipped', 'Delivered'][Math.floor(Math.random() * 3)],
+        const response = await api.get("/orders/My-Orders");
+
+        const ordersFromApi = response.data.data || [];
+
+        const normalizedOrders = ordersFromApi.map((order) => ({
+          id: order.id,
+          date: order.orderDate,
+          total: order.totalAmount,
+          status: order.status,
+          items: order.items.map((item) => ({
+            id: item.productId,
+            name: item.productName,
+            price: item.price,
+            quantity: item.quantity,
+           image: buildImageUrl(item.imageUrl),
+          })),
         }));
-        setOrders(userOrders.slice().reverse());
+
+        setOrders(normalizedOrders.reverse());
       } catch (error) {
         console.error("Failed to fetch orders", error);
       } finally {
@@ -249,16 +278,19 @@ const Orders = () => {
   }, []);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   if (loading) {
     return <div className="text-center py-20">Loading your orders...</div>;
   }
+
+
+
 
   return (
     <div className="bg-gray-100 min-h-screen pt-10">
@@ -278,7 +310,9 @@ const Orders = () => {
 
         {orders.length === 0 ? (
           <div className="text-center bg-white p-10 rounded-lg shadow-md">
-            <p className="text-gray-600 mb-4">You haven't placed any orders yet.</p>
+            <p className="text-gray-600 mb-4">
+              You haven't placed any orders yet.
+            </p>
             <Link
               to="/product"
               className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition font-semibold"
@@ -299,26 +333,36 @@ const Orders = () => {
                 <motion.div
                   key={order.id}
                   className="bg-white rounded-lg shadow-md overflow-hidden"
-                  variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 },
+                  }}
                 >
                   <div
                     className="p-4 cursor-pointer bg-gray-50 hover:bg-gray-100 border-b border-gray-200"
-                    onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+                    onClick={() =>
+                      setExpandedOrderId(isExpanded ? null : order.id)
+                    }
                   >
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-bold text-lg">
-                          Order <span className="text-yellow-600 uppercase">#{order.id.substring(0, 8)}</span>
+                          Order{" "}
+                          <span className="text-yellow-600 uppercase">
+                            #{String(order.id).substring(0, 8)}
+                          </span>
                         </p>
                         <p className="text-sm text-gray-500">
                           Placed on {formatDate(order.date)}
                         </p>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="font-bold text-xl text-gray-800">₹{order.total}</span>
+                        <span className="font-bold text-xl text-gray-800">
+                          ₹{order.total}
+                        </span>
                         <ChevronDown
                           className={`transform transition-transform duration-300 ${
-                            isExpanded ? 'rotate-180' : ''
+                            isExpanded ? "rotate-180" : ""
                           }`}
                         />
                       </div>
@@ -329,7 +373,7 @@ const Orders = () => {
                     {isExpanded && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
+                        animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
@@ -337,16 +381,25 @@ const Orders = () => {
                         <div className="p-4">
                           <div className="space-y-4">
                             {(order.items || []).map((item) => (
-                              <div key={item.id} className="flex items-start gap-4 p-2 rounded-lg">
+                              <div
+                                key={item.id}
+                                className="flex items-start gap-4 p-2 rounded-lg"
+                              >
                                 <img
                                   src={item.image}
                                   alt={item.name}
                                   className="w-20 h-20 object-contain rounded border p-1"
                                 />
                                 <div className="flex-grow">
-                                  <p className="font-bold text-gray-800">{item.name}</p>
-                                  <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                                  <p className="text-sm font-semibold text-gray-700">₹{item.price}</p>
+                                  <p className="font-bold text-gray-800">
+                                    {item.name}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    Qty: {item.quantity}
+                                  </p>
+                                  <p className="text-sm font-semibold text-gray-700">
+                                    ₹{item.price}
+                                  </p>
                                 </div>
                               </div>
                             ))}

@@ -561,58 +561,62 @@ function Profile() {
     }
   };
 
-  // /* ✅ FIXED: REMOVE FROM CART */
-  // const handleRemoveFromCart = async (itemId) => {
-  //   try {
-  //     await api.delete(`/cart/${itemId}`); // matches CartController
-  //     toast.success("Item removed from cart.");
-  //     fetchUserData();
-  //   } catch {
-  //     toast.error("Failed to remove item.");
-  //   }
-  // };
 
-  const handleRemoveFromCart = async (itemId) => {
+
+//   const handleRemoveFromCart = async (itemId) => {
+//   try {
+//     const updatedCart = user.cart.filter(
+//       (item) => item.productId !== itemId
+//     );
+
+//     await api.patch("/users/My Profile", {
+//       cart: updatedCart,
+//     });
+
+//     toast.success("Item removed from cart.");
+//     setUser((prev) => ({ ...prev, cart: updatedCart }));
+//   } catch (err) {
+//     toast.error("Failed to remove item.");
+//   }
+// };
+
+const handleRemoveFromCart = async (productId) => {
   try {
-    const updatedCart = user.cart.filter(
-      (item) => item.productId !== itemId
-    );
-
-    await api.patch("/users/My Profile", {
-      cart: updatedCart,
-    });
-
+    await api.delete(`/cart/${productId}`);
     toast.success("Item removed from cart.");
-    setUser((prev) => ({ ...prev, cart: updatedCart }));
+    fetchUserData();
+    window.dispatchEvent(new Event("cartUpdated"));
   } catch (err) {
     toast.error("Failed to remove item.");
   }
 };
 
 
-  /* ✅ FIXED: REMOVE FROM WISHLIST */
-  // const handleRemoveFromWishlist = async (itemId) => {
-  //   try {
-  //     await api.delete(`/wishlist/${itemId}`); // matches WishlistController
-  //     toast.success("Item removed from wishlist.");
-  //     fetchUserData();
-  //   } catch {
-  //     toast.error("Failed to remove item.");
-  //   }
-  // };
 
-  const handleRemoveFromWishlist = async (itemId) => {
+
+//   const handleRemoveFromWishlist = async (itemId) => {
+//   try {
+//     const updatedWishlist = user.wishlist.filter(
+//       (item) => item.productId !== itemId
+//     );
+
+//     await api.patch("/users/My Profile", {
+//       wishlist: updatedWishlist,
+//     });
+
+//     toast.success("Item removed from wishlist.");
+//     setUser((prev) => ({ ...prev, wishlist: updatedWishlist }));
+//   } catch (err) {
+//     toast.error("Failed to remove item.");
+//   }
+// };
+
+
+const handleRemoveFromWishlist = async (productId) => {
   try {
-    const updatedWishlist = user.wishlist.filter(
-      (item) => item.productId !== itemId
-    );
-
-    await api.patch("/users/My Profile", {
-      wishlist: updatedWishlist,
-    });
-
+    await api.delete(`/wishlist/${productId}`);
     toast.success("Item removed from wishlist.");
-    setUser((prev) => ({ ...prev, wishlist: updatedWishlist }));
+    fetchUserData();
   } catch (err) {
     toast.error("Failed to remove item.");
   }

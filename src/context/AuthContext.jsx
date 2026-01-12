@@ -7,7 +7,6 @@ import api from "../Api/Axios_Instance";
 
 export const AuthContext = createContext(null);
 
-// Custom hook for easy access
 export const useAuth = () => useContext(AuthContext);
 
 const AuthProvider = ({ children }) => {
@@ -15,20 +14,6 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   try {
-  //     const storedUser = localStorage.getItem("user");
-  //     if (storedUser) {
-  //       setUser(JSON.parse(storedUser));
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to parse stored user:", error);
-  //     localStorage.removeItem("user");
-  //     setUser(null);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }, []);
 
    useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -41,58 +26,53 @@ const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const signup = async (newUser) => {
-    try {
-      const existingUserCheck = await api.get(`/users?email=${newUser.email}`);
-      if (existingUserCheck.data.length > 0) {
-        toast.error("An account with this email already exists.");
-        return;
-      }
-      const userData = { ...newUser, role: "user", cart: [], wishlist: [], orders: [] };
-      const response = await api.post("/users", userData);
-      const createdUser = response.data;
-      setUser(createdUser);
-      localStorage.setItem("user", JSON.stringify(createdUser));
-      toast.success("Signup Successful! Welcome!");
-      navigate("/");
-    } catch (e) {
-      console.error("Signup failed:", e);
-      toast.error("Signup failed. Please try again.");
-    }
-  };
 
-  // const login = async (email, password) => {
-  //   try {
-  //     const response = await api.get(`/users?email=${email}`);
-  //     const users = response.data;
+const signup = async (newUser) => {
+  const name = newUser.name.trim();
+  const email = newUser.email.trim().toLowerCase();
+  const password = newUser.password;
 
-  //     if (users.length === 0 || users[0].password !== password) {
-  //       toast.error("Invalid email or password.");
-  //       return;
-  //     }
+  const nameRegex = /^[A-Za-z]{3,50}$/;
+  const emailRegex = /^[a-z0-9]+([._%+-][a-z0-9]+)*@[a-z0-9-]+\.com$/;
+  const passwordRegex =
+    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])(?!.*\s)(?!.*(.)\1\1).{8,50}$/;
 
-  //     const loggedInUser = users[0];
+  if (!nameRegex.test(name)) {
+    return toast.error("Name must contain only letters (no spaces)");
+  }
 
-  //     // Check if the user's account is blocked
-  //     if (loggedInUser.isBlocked) {
-  //       toast.error("Your account has been blocked. Please contact support.");
-  //       return; // Prevent login
-  //     }
+  if (!emailRegex.test(email)) {
+    return toast.error("Email must be a valid .com email");
+  }
 
-  //     setUser(loggedInUser);
-  //     localStorage.setItem("user", JSON.stringify(loggedInUser));
-  //     toast.success(`Welcome back, ${loggedInUser.name}!`);
-      
-  //     if (loggedInUser.role === "admin") {
-  //       navigate("/dashboard");
-  //     } else {
-  //       navigate("/");
-  //     }
-  //   } catch (e) {
-  //     console.error("Login failed:", e);
-  //     toast.error("Login failed. Please try again.");
-  //   }
-  // };
+  if (!passwordRegex.test(password)) {
+    return toast.error(
+      "Password must contain uppercase, lowercase, number & special character"
+    );
+  }
+
+  try {
+    await api.post("/auth/register", {
+      name,
+      email,
+      password,
+    });
+
+    toast.success("Signup successful! Please login.");
+    navigate("/login");
+  } catch (err) {
+    console.error("Signup failed:", err);
+
+    toast.error(
+      err.response?.data?.message ||
+      "Signup failed. Please check your input."
+    );
+  }
+};
+
+
+
+
 
 
    const login = async (email, password) => {

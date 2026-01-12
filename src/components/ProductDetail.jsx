@@ -1,6 +1,3 @@
-
-
-
 // import React, { useState, useContext } from "react";
 // import { AuthContext } from "../context/AuthContext";
 // import { useNavigate } from "react-router-dom";
@@ -214,9 +211,6 @@
 
 // export default ProductDetail;
 
-
-
-
 import React, { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -285,12 +279,14 @@ function ProductDetail({ product, onBack }) {
           productId: product.id,
           productName: product.name,
           price: product.price,
-          image: product.image,
+          image: product.image || product.imageUrl,
           quantity: count,
         },
       },
     });
   };
+
+  const getProductImage = (product) => product.imageUrl || product.image || "";
 
   return (
     <motion.div
@@ -315,7 +311,7 @@ function ProductDetail({ product, onBack }) {
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.5 }}
-            src={product.image}
+            src={getProductImage(product)}
             alt={product.name}
             className="object-contain h-80 w-full"
           />
@@ -410,4 +406,3 @@ function ProductDetail({ product, onBack }) {
 }
 
 export default ProductDetail;
-
