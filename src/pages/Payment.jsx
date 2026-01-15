@@ -22,6 +22,17 @@ const Payment = () => {
   const location = useLocation();
   const buyNowItem = location.state?.buyNowItem || null;
 
+  const loadRazorpay = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
+
 
 
   useEffect(() => {
@@ -59,36 +70,68 @@ const Payment = () => {
     setBillingInfo({ ...billingInfo, [e.target.name]: e.target.value });
 
 
-  const handlePayment = async () => {
-    const { name, phone, address } = billingInfo;
+  // const handlePayment = async () => {
+  //   const { name, phone, address } = billingInfo;
 
-    if (!name || !phone || !address) {
-      return toast.error("Please fill all billing details");
-    }
+  //   if (!name || !phone || !address) {
+  //     return toast.error("Please fill all billing details");
+  //   }
 
-    try {
-      if (buyNowItem) {
-        await api.post("/orders/Direct Order", {
-          productId: buyNowItem.productId,
-          quantity: buyNowItem.quantity,
+  //   try {
+  //     if (buyNowItem) {
+  //       await api.post("/orders/Direct Order", {
+  //         productId: buyNowItem.productId,
+  //         quantity: buyNowItem.quantity,
 
-          fullName: billingInfo.name,
-          phoneNumber: billingInfo.phone,
-          addressLine: billingInfo.address,
-          city: "NA",
-          state: "NA",
-          postalCode: "000000",
-          country: "India",
-        });
+  //         fullName: billingInfo.name,
+  //         phoneNumber: billingInfo.phone,
+  //         addressLine: billingInfo.address,
+  //         city: "NA",
+  //         state: "NA",
+  //         postalCode: "000000",
+  //         country: "India",
+  //       });
 
-        toast.success("Order placed successfully!");
-        window.dispatchEvent(new Event("cartUpdated"));
-        navigate("/ordersuccess");
-        return;
-      }
+  //       toast.success("Order placed successfully!");
+  //       window.dispatchEvent(new Event("cartUpdated"));
+  //       navigate("/ordersuccess");
+  //       return;
+  //     }
 
-      // ✅ CART CHECKOUT
-      await api.post("/orders/Order Inside Cart", {
+  //     // ✅ CART CHECKOUT
+  //     await api.post("/orders/Order Inside Cart", {
+  //       fullName: billingInfo.name,
+  //       phoneNumber: billingInfo.phone,
+  //       addressLine: billingInfo.address,
+  //       city: "NA",
+  //       state: "NA",
+  //       postalCode: "000000",
+  //       country: "India",
+  //     });
+
+  //     toast.success("Order placed successfully!");
+  //     window.dispatchEvent(new Event("cartUpdated"));
+  //     navigate("/ordersuccess");
+  //   } catch (error) {
+  //     console.error("Payment failed:", error);
+  //     toast.error("Payment failed");
+  //   }
+  // };
+
+const handlePayment = async () => {
+  const { name, phone, address } = billingInfo;
+
+  if (!name || !phone || !address) {
+    return toast.error("Please fill all billing details");
+  }
+
+  try {
+    let orderId;
+
+    if (buyNowItem) {
+      const res = await api.post("/orders/Direct Order", {
+        productId: buyNowItem.productId,
+        quantity: buyNowItem.quantity,
         fullName: billingInfo.name,
         phoneNumber: billingInfo.phone,
         addressLine: billingInfo.address,
@@ -98,14 +141,66 @@ const Payment = () => {
         country: "India",
       });
 
-      toast.success("Order placed successfully!");
-      window.dispatchEvent(new Event("cartUpdated"));
-      navigate("/ordersuccess");
-    } catch (error) {
-      console.error("Payment failed:", error);
-      toast.error("Payment failed");
+      orderId = res.data.data; // backend should return orderId
+    } else {
+      const res = await api.post("/orders/Order Inside Cart", {
+        fullName: billingInfo.name,
+        phoneNumber: billingInfo.phone,
+        addressLine: billingInfo.address,
+        city: "NA",
+        state: "NA",
+        postalCode: "000000",
+        country: "India",
+      });
+
+      orderId = res.data.data; // backend should return orderId
     }
-  };
+
+    const loaded = await loadRazorpay();
+    if (!loaded) {
+      toast.error("Razorpay SDK failed to load");
+      return;
+    }
+
+    const paymentRes = await api.post("/payments/razorpay/payment", {
+      orderId: orderId,
+    });
+
+    const { razorpayOrderId, amount } = paymentRes.data.data;
+
+    const options = {
+      key: "rzp_test_S3EOfbXxHEP8yy", // TEST KEY ONLY
+      amount: amount * 100,
+      currency: "INR",
+      name: "TekTrov",
+      description: "Order Payment",
+      order_id: razorpayOrderId,
+
+      handler: async function (response) {
+        await api.post("/payments/razorpay/payment", {
+          orderId: orderId,
+          razorpayOrderId: response.razorpay_order_id,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpaySignature: response.razorpay_signature,
+        });
+
+        toast.success("Payment successful!");
+        window.dispatchEvent(new Event("cartUpdated"));
+        navigate("/ordersuccess");
+      },
+
+      theme: { color: "#facc15" },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  } catch (error) {
+    console.error("Payment failed:", error);
+    toast.error("Payment failed");
+  }
+};
+
+
 
   const getProductImage = (item) => {
     return item.imageUrl || item.image || "";

@@ -11,36 +11,7 @@ export const WishlistProvider = ({ children }) => {
   const { user } = useAuth();
 
 
-// useEffect(() => {
-//   const fetchWishlist = async () => {
-//     if (!user) {
-//       setWishlist([]);
-//       return;
-//     }
 
-//     try {
-//       const res = await api.get("/wishlist");
-//       const data = res.data.data || [];
-
-//       // ✅ NORMALIZE BACKEND DATA
-//       const normalized = data.map((item) => ({
-//         id: item.productId,            // 🔥 IMPORTANT
-//         productId: item.productId,
-//         productName: item.productName,
-//         price: item.price,
-//         stock: item.stock,
-//         imageUrl: item.imageUrl,
-//       }));
-
-//       setWishlist(normalized);
-//     } catch (err) {
-//       console.error("Failed to fetch wishlist:", err);
-//       setWishlist([]);
-//     }
-//   };
-
-//   fetchWishlist();
-// }, [user]);
 
 useEffect(() => {
   const fetchWishlist = async () => {
@@ -53,7 +24,6 @@ useEffect(() => {
       const res = await api.get("/wishlist");
       const wishlistItems = res.data.data || [];
 
-      // 🔥 FETCH REAL STOCK FOR EACH PRODUCT
       const withStock = await Promise.all(
         wishlistItems.map(async (item) => {
           try {
@@ -66,7 +36,6 @@ useEffect(() => {
               price: item.price,
               imageUrl: item.imageUrl,
 
-              // ✅ REAL STOCK FROM PRODUCT API
               stock: productRes.data.data.stock,
             };
           } catch {
@@ -141,6 +110,7 @@ const toggleWishlist = async (product) => {
   try {
     await api.delete(`/wishlist/${productId}`);
     setWishlist((prev) => prev.filter((item) => item.id !== productId));
+     toast.success("Removed from wishlist");
   } catch (error) {
     toast.error("Failed to remove from wishlist");
   }

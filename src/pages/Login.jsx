@@ -11,11 +11,9 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-  // This login logic remains unchanged
   const handleLogin = (e) => {
     e.preventDefault();
     if (!email || !password) {
-        // You might want to add a toast notification here
         return;
     }
     login(email, password);

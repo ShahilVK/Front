@@ -11,15 +11,12 @@ function Register() {
   const [password, setPassword] = useState('');
   const { signup } = useContext(AuthContext);
 
-  // This registration logic remains the same
   const handleRegister = (e) => {
     e.preventDefault();
     if (!name || !email || !password) {
-        // You can add a toast notification for validation if you like
         return;
     }
     signup({ name, email, password });
-    // The signup function in your AuthContext will handle navigation
   };
 
   return (

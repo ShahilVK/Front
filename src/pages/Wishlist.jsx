@@ -14,7 +14,6 @@ function Wishlist() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // ✅ Add product to cart (update db.json)
   const handleAddToCart = async (product) => {
     if (!user) {
       return navigate("/login"); // must login

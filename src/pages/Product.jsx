@@ -1,4 +1,3 @@
-
 // import React, { useEffect, useState, useContext, useMemo } from "react";
 // import { useLocation, useNavigate } from "react-router-dom";
 // import { motion } from "framer-motion";
@@ -261,21 +260,21 @@
 
 // export default Product;
 
-
-
-
-
-
-
-
-
 // INterested
-
 
 import React, { useEffect, useState, useContext, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Search, ShoppingCart, Filter, Eye, Star, TrendingUp, Shield } from "lucide-react";
+import {
+  Heart,
+  Search,
+  ShoppingCart,
+  Filter,
+  Eye,
+  Star,
+  TrendingUp,
+  Shield,
+} from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
 import api from "../Api/Axios_Instance";
@@ -295,6 +294,7 @@ function Product() {
   const [sortBy, setSortBy] = useState("default");
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredProduct, setHoveredProduct] = useState(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const { wishlist, toggleWishlist } = useWishlist();
   const { user } = useContext(AuthContext);
@@ -323,7 +323,49 @@ function Product() {
     fetchProduct();
   }, []);
 
-  const categories = ["All", "Headphones", "Earbuds", "Speakers", "Watches", "Power Bank"];
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim().toLowerCase());
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const categories = [
+    "All",
+    "Headphones",
+    "Earbuds",
+    "Speakers",
+    "Watches",
+    "Power Bank",
+  ];
+
+  // const displayedProducts = useMemo(() => {
+  //   if (!Array.isArray(products)) return [];
+
+  //   let items = [...products];
+
+  //   const parsePrice = (price) =>
+  //     parseFloat(String(price).replace(/[^\d.]/g, ""));
+
+  //   if (sortBy === "price-asc")
+  //     items.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
+
+  //   if (sortBy === "price-desc")
+  //     items.sort((a, b) => parsePrice(b.price) - parsePrice(a.price));
+
+  //   if (sortBy === "rating")
+  //     items.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
+  //   if (sortBy === "popular")
+  //     items.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+
+  //   return items.filter(
+  //     (product) =>
+  //       (selectedCategory === "All" || product.category === selectedCategory) &&
+  //       product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  //   );
+  // }, [products, selectedCategory, searchTerm, sortBy]);
 
   const displayedProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
@@ -345,55 +387,74 @@ function Product() {
     if (sortBy === "popular")
       items.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
-    return items.filter(
-      (product) =>
-        (selectedCategory === "All" || product.category === selectedCategory) &&
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [products, selectedCategory, searchTerm, sortBy]);
+    // ✅ CATEGORY FILTER
+    if (selectedCategory !== "All") {
+      items = items.filter(
+        (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
 
+    // ✅ SEARCH FILTER
+    if (debouncedSearch) {
+      items = items.filter((p) =>
+        p.name?.toLowerCase().includes(debouncedSearch)
+      );
+    }
 
+    return items;
+  }, [products, selectedCategory, debouncedSearch, sortBy]);
 
+  const handleAddToCart = async (product) => {
+    try {
+      if (product.stock <= 0) {
+        return toast.error("Product is out of stock");
+      }
 
-const handleAddToCart = async (product) => {
-  try {
+      await api.post(`/cart/${product.id}`);
+      window.dispatchEvent(new Event("cartUpdated"));
+      toast.success("Added to cart!");
+    } catch (error) {
+      console.error("Add to cart error:", error);
 
-    await api.post(`/cart/${product.id}`); 
-
-     window.dispatchEvent(new Event("cartUpdated"));
-    
-    toast.success("Added to cart!");
-    
-  } catch (error) {
-    console.error("Add to cart error:", error);
-    toast.error("Failed to add to cart");
-  }
-};
+      // ✅ IMPORTANT FIX
+      if (error.response?.status === 500) {
+        toast.error("Product is out of stock");
+      } else {
+        toast.error("Failed to add to cart");
+      }
+    }
+  };
 
   const generateStars = (rating) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Star
         key={index}
         size={14}
-        className={index < Math.floor(rating || 0) ? "text-amber-500 fill-amber-500" : "text-gray-300"}
+        className={
+          index < Math.floor(rating || 0)
+            ? "text-amber-500 fill-amber-500"
+            : "text-gray-300"
+        }
       />
     ));
   };
 
-  const staggerContainer = { 
-    hidden: { opacity: 0 }, 
-    visible: { 
-      opacity: 1, 
-      transition: { staggerChildren: 0.1 } 
-    } 
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 },
+    },
   };
 
-  const itemVariant = { 
-    hidden: { opacity: 0, y: 20, scale: 0.95 }, 
-    visible: { 
-      opacity: 1, y: 0, scale: 1,
-      transition: { type: "spring", stiffness: 100 }
-    } 
+  const itemVariant = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { type: "spring", stiffness: 100 },
+    },
   };
 
   const ProductSkeleton = () => (
@@ -414,16 +475,16 @@ const handleAddToCart = async (product) => {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Navbar />
-      <Toaster 
-        position="top-right" 
+      <Toaster
+        position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#363636',
-            color: '#fff',
-            borderRadius: '12px',
-            fontSize: '14px',
-            fontWeight: '500'
+            background: "#363636",
+            color: "#fff",
+            borderRadius: "12px",
+            fontSize: "14px",
+            fontWeight: "500",
           },
         }}
       />
@@ -448,7 +509,8 @@ const handleAddToCart = async (product) => {
                     transition={{ delay: 0.3 }}
                     className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed"
                   >
-                    Elevate your experience with our curated collection of high-quality accessories
+                    Elevate your experience with our curated collection of
+                    high-quality accessories
                   </motion.p>
                 </motion.div>
               </div>
@@ -464,8 +526,11 @@ const handleAddToCart = async (product) => {
               >
                 <div className="flex flex-col lg:flex-row gap-6 items-stretch lg:items-center">
                   {/* Search */}
-                  <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  {/* <div className="relative flex-1">
+                    <Search
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={20}
+                    />
                     <input
                       type="text"
                       placeholder="Search products..."
@@ -473,6 +538,29 @@ const handleAddToCart = async (product) => {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full p-4 pl-12 border-0 bg-white/70 backdrop-blur-sm rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-500"
                     />
+                  </div> */}
+                  <div className="relative flex-1">
+                    <Search
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={20}
+                    />
+
+                    <input
+                      type="text"
+                      placeholder="Search products by name..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full p-4 pl-12 pr-10 border-0 bg-white/70 backdrop-blur-sm rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                    />
+
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
 
                   {/* Categories */}
@@ -480,7 +568,11 @@ const handleAddToCart = async (product) => {
                     {categories.map((cat) => (
                       <button
                         key={cat}
-                        onClick={() => setSelectedCategory(cat)}
+                        // onClick={() => setSelectedCategory(cat)}
+                        onClick={() => {
+                          setSelectedCategory(cat);
+                          setSearchTerm(""); // ✅ reset search when switching category
+                        }}
                         className={`px-5 py-3 rounded-xl font-semibold whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${
                           selectedCategory === cat
                             ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25"
@@ -505,7 +597,10 @@ const handleAddToCart = async (product) => {
                       <option value="rating">Top Rated</option>
                       <option value="popular">Most Popular</option>
                     </select>
-                    <Filter className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
+                    <Filter
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                      size={20}
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -520,13 +615,17 @@ const handleAddToCart = async (product) => {
                 >
                   <div>
                     <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                      {selectedCategory === "All" ? "All Products" : selectedCategory}
+                      {selectedCategory === "All"
+                        ? "All Products"
+                        : selectedCategory}
                     </h2>
                     <p className="text-gray-600">
-                      {displayedProducts.length} {displayedProducts.length === 1 ? 'product' : 'products'} found
+                      {displayedProducts.length}{" "}
+                      {displayedProducts.length === 1 ? "product" : "products"}{" "}
+                      found
                     </p>
                   </div>
-                  
+
                   <div className="flex gap-4 mt-4 sm:mt-0">
                     <div className="flex items-center gap-2 text-sm text-gray-600 bg-white/80 px-3 py-2 rounded-lg">
                       <TrendingUp size={16} className="text-green-500" />
@@ -566,60 +665,72 @@ const handleAddToCart = async (product) => {
                             {/* Product Badges */}
                             <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
                               {product.isNew && (
-                                <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">NEW</span>
+                                <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                                  NEW
+                                </span>
                               )}
                               {product.discount && (
-                                <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">-{product.discount}%</span>
+                                <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                                  -{product.discount}%
+                                </span>
                               )}
                             </div>
 
                             {/* Product Image */}
                             <div className="relative overflow-hidden bg-gradient-to-br from-gray-50 to-white">
-                                <div className="w-full h-56 flex items-center justify-center p-6 relative">
-                                 {getProductImage(product) ? (
-                                    <img
-                                      src={getProductImage(product)}
-                                      alt={product.name}
-                                      className="object-contain h-full w-full"
-                                    />
-                                  ) : (
-                                    <div className="flex items-center justify-center h-full w-full text-gray-400 text-sm">
-                                      No Image
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {/* Hover Actions */}
-                                <motion.div 
-                                  className="absolute inset-0 bg-black/60 flex items-center justify-center gap-4"
-                                  initial={{ opacity: 0 }}
-                                  whileHover={{ opacity: 1 }}
-                                  transition={{ duration: 0.3 }}
+                              <div className="w-full h-56 flex items-center justify-center p-6 relative">
+                                {getProductImage(product) ? (
+                                  <img
+                                    src={getProductImage(product)}
+                                    alt={product.name}
+                                    className="object-contain h-full w-full"
+                                  />
+                                ) : (
+                                  <div className="flex items-center justify-center h-full w-full text-gray-400 text-sm">
+                                    No Image
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Hover Actions */}
+                              <motion.div
+                                className="absolute inset-0 bg-black/60 flex items-center justify-center gap-4"
+                                initial={{ opacity: 0 }}
+                                whileHover={{ opacity: 1 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <motion.button
+                                  onClick={() => setSelectedProduct(product)}
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  className="p-3 bg-white text-gray-800 rounded-full hover:bg-purple-600 hover:text-white transition-all shadow-lg"
                                 >
-                                  <motion.button
-                                    onClick={() => setSelectedProduct(product)}
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    className="p-3 bg-white text-gray-800 rounded-full hover:bg-purple-600 hover:text-white transition-all shadow-lg"
-                                  >
-                                    <Eye size={20} />
-                                  </motion.button>
-                                  <motion.button
-                                    onClick={() => toggleWishlist(product)}
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    className={`p-3 rounded-full hover:bg-purple-600 hover:text-white transition-all shadow-lg ${
-                                      wishlist.some((item) => item.id === product.id)
-                                        ? "bg-red-500 text-white"
-                                        : "bg-white text-gray-800"
-                                    }`}
-                                  >
-                                    <Heart
-                                      size={20}
-                                      fill={wishlist.some((item) => item.id === product.id) ? "currentColor" : "none"}
-                                    />
-                                  </motion.button>
-                                </motion.div>
+                                  <Eye size={20} />
+                                </motion.button>
+                                <motion.button
+                                  onClick={() => toggleWishlist(product)}
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  className={`p-3 rounded-full hover:bg-purple-600 hover:text-white transition-all shadow-lg ${
+                                    wishlist.some(
+                                      (item) => item.id === product.id
+                                    )
+                                      ? "bg-red-500 text-white"
+                                      : "bg-white text-gray-800"
+                                  }`}
+                                >
+                                  <Heart
+                                    size={20}
+                                    fill={
+                                      wishlist.some(
+                                        (item) => item.id === product.id
+                                      )
+                                        ? "currentColor"
+                                        : "none"
+                                    }
+                                  />
+                                </motion.button>
+                              </motion.div>
                             </div>
 
                             {/* Product Info */}
@@ -630,19 +741,22 @@ const handleAddToCart = async (product) => {
                                 </span>
                                 <div className="flex items-center gap-1">
                                   {generateStars(product.rating || 4.5)}
-                                  <span className="text-xs text-gray-500 ml-1">({product.reviews || 24})</span>
+                                  <span className="text-xs text-gray-500 ml-1">
+                                    ({product.reviews || 24})
+                                  </span>
                                 </div>
                               </div>
-                              
+
                               <h3
                                 onClick={() => setSelectedProduct(product)}
                                 className="text-lg font-bold text-gray-900 cursor-pointer line-clamp-2 hover:text-purple-600 transition-colors mb-2 leading-tight"
                               >
                                 {product.name}
                               </h3>
-                              
+
                               <p className="text-sm text-gray-600 line-clamp-2 mb-4 flex-grow">
-                                {product.description || "Premium quality product with excellent features and durability."}
+                                {product.description ||
+                                  "Premium quality product with excellent features and durability."}
                               </p>
 
                               <div className="flex items-center justify-between mt-auto">
@@ -656,29 +770,44 @@ const handleAddToCart = async (product) => {
                                     </span>
                                   )}
                                 </div>
-                                
+
                                 <motion.button
+                                  disabled={product.stock <= 0}
                                   onClick={() => handleAddToCart(product)}
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg hover:shadow-amber-500/25 flex items-center gap-2"
+                                  whileHover={
+                                    product.stock > 0 ? { scale: 1.05 } : {}
+                                  }
+                                  whileTap={
+                                    product.stock > 0 ? { scale: 0.95 } : {}
+                                  }
+                                  className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2
+    ${
+      product.stock <= 0
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-gradient-to-r from-amber-500 to-amber-600 text-white"
+    }`}
                                 >
                                   <ShoppingCart size={18} />
-                                  Add
+                                  {product.stock <= 0 ? "Out of Stock" : "Add"}
                                 </motion.button>
                               </div>
                             </div>
                           </motion.div>
                         ))
                       ) : (
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           className="col-span-full text-center py-16"
                         >
                           <div className="max-w-md mx-auto">
-                            <Search size={64} className="mx-auto text-gray-300 mb-4" />
-                            <h3 className="text-2xl font-bold text-gray-700 mb-2">No products found</h3>
+                            <Search
+                              size={64}
+                              className="mx-auto text-gray-300 mb-4"
+                            />
+                            <h3 className="text-2xl font-bold text-gray-700 mb-2">
+                              No products found
+                            </h3>
                             <button
                               onClick={() => {
                                 setSearchTerm("");
@@ -699,7 +828,10 @@ const handleAddToCart = async (product) => {
             </div>
           </>
         ) : (
-          <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} />
+          <ProductDetail
+            product={selectedProduct}
+            onBack={() => setSelectedProduct(null)}
+          />
         )}
       </main>
       <Footer />
@@ -708,8 +840,6 @@ const handleAddToCart = async (product) => {
 }
 
 export default Product;
-
-
 
 // import React, { useEffect, useState, useContext, useMemo } from "react";
 // import { useLocation, useNavigate } from "react-router-dom";
@@ -817,31 +947,31 @@ export default Product;
 //     ));
 //   };
 
-//   const staggerContainer = { 
-//     hidden: { opacity: 0 }, 
-//     visible: { 
-//       opacity: 1, 
-//       transition: { 
-//         staggerChildren: 0.1 
-//       } 
-//     } 
+//   const staggerContainer = {
+//     hidden: { opacity: 0 },
+//     visible: {
+//       opacity: 1,
+//       transition: {
+//         staggerChildren: 0.1
+//       }
+//     }
 //   };
 
-//   const itemVariant = { 
-//     hidden: { 
-//       opacity: 0, 
+//   const itemVariant = {
+//     hidden: {
+//       opacity: 0,
 //       y: 20,
 //       scale: 0.95
-//     }, 
-//     visible: { 
-//       opacity: 1, 
+//     },
+//     visible: {
+//       opacity: 1,
 //       y: 0,
 //       scale: 1,
 //       transition: {
 //         type: "spring",
 //         stiffness: 100
 //       }
-//     } 
+//     }
 //   };
 
 //   const ProductSkeleton = () => (
@@ -862,8 +992,8 @@ export default Product;
 //   return (
 //     <div className="flex flex-col min-h-screen bg-white">
 //       <Navbar />
-//       <Toaster 
-//         position="top-right" 
+//       <Toaster
+//         position="top-right"
 //         toastOptions={{
 //           duration: 3000,
 //           style: {
@@ -969,7 +1099,7 @@ export default Product;
 //                       {selectedCategory === "All" ? "All Products" : selectedCategory}
 //                     </h2>
 //                     <p className="text-gray-600 text-sm mt-1">
-//                       {displayedProducts.length} {displayedProducts.length === 1 ? 'product' : 'products'} 
+//                       {displayedProducts.length} {displayedProducts.length === 1 ? 'product' : 'products'}
 //                       {searchTerm && ` for "${searchTerm}"`}
 //                     </p>
 //                   </div>
@@ -1023,9 +1153,9 @@ export default Product;
 //                                   className="object-contain h-full w-full"
 //                                 />
 //                               </div>
-                              
+
 //                               {/* Hover Actions */}
-//                               <motion.div 
+//                               <motion.div
 //                                 className="absolute inset-0 bg-black/50 flex items-center justify-center gap-3"
 //                                 initial={{ opacity: 0 }}
 //                                 whileHover={{ opacity: 1 }}
@@ -1072,14 +1202,14 @@ export default Product;
 //                                   <span className="text-xs text-gray-500 ml-1">({product.reviews || 24})</span>
 //                                 </div>
 //                               </div>
-                              
+
 //                               <h3
 //                                 onClick={() => setSelectedProduct(product)}
 //                                 className="text-base font-semibold text-gray-900 cursor-pointer line-clamp-2 hover:text-orange-600 transition-colors mb-2"
 //                               >
 //                                 {product.name}
 //                               </h3>
-                              
+
 //                               <p className="text-sm text-gray-600 line-clamp-2 mb-3 flex-grow">
 //                                 {product.description || "Premium quality product with excellent features."}
 //                               </p>
@@ -1095,7 +1225,7 @@ export default Product;
 //                                     </span>
 //                                   )}
 //                                 </div>
-                                
+
 //                                 <motion.button
 //                                   onClick={() => handleAddToCart(product)}
 //                                   whileHover={{ scale: 1.05 }}
@@ -1110,7 +1240,7 @@ export default Product;
 //                           </motion.div>
 //                         ))
 //                       ) : (
-//                         <motion.div 
+//                         <motion.div
 //                           initial={{ opacity: 0, scale: 0.9 }}
 //                           animate={{ opacity: 1, scale: 1 }}
 //                           className="col-span-full text-center py-16"

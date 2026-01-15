@@ -211,7 +211,7 @@
 
 // export default ProductDetail;
 
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
@@ -229,37 +229,69 @@ import {
 function ProductDetail({ product, onBack }) {
   const [count, setCount] = useState(1);
   const { user } = useContext(AuthContext);
+  const [cartQuantity, setCartQuantity] = useState(0);
+
   const navigate = useNavigate();
 
   const basePrice =
     parseFloat(String(product.price).replace(/[^\d.]/g, "")) || 0;
   const totalPrice = (basePrice * count).toFixed(2);
 
-  /* ✅ FIXED: ADD TO CART (NO STOCK REDUCTION) */
-  const addToCart = async () => {
-    if (!user) return navigate("/login");
+
+
+  useEffect(() => {
+  const fetchCartQty = async () => {
+    if (!user) return;
 
     try {
-      if (product.stock <= 0) {
-        return toast.error("Out of stock!");
-      }
+      const res = await api.get("/cart");
+      const items = res.data.data || [];
 
-      if (count > product.stock) {
-        return toast.error("Not enough stock available.");
-      }
+      const existingItem = items.find(
+        (item) => item.productId === product.id
+      );
 
-      // ✅ backend handles cart properly
-      await api.post(`/cart/${product.id}`, {
-        quantity: count,
-      });
-
-      toast.success(`${product.name} added to cart!`);
-      window.dispatchEvent(new CustomEvent("cartUpdated"));
+      setCartQuantity(existingItem?.quantity || 0);
     } catch (err) {
-      console.error("Error adding to cart:", err);
-      toast.error("Failed to add item to cart.");
+      console.error("Failed to load cart quantity", err);
     }
   };
+
+  fetchCartQty();
+}, [product.id, user]);
+
+
+
+  const addToCart = async () => {
+  if (!user) return navigate("/login");
+
+  try {
+    const availableStock = product.stock - cartQuantity;
+
+    if (availableStock <= 0) {
+      return toast.error("Product is out of stock!");
+    }
+
+    if (count > availableStock) {
+      return toast.error(
+        `Only ${availableStock} item(s) left in stock`
+      );
+    }
+
+    await api.post(`/cart/${product.id}`, {
+      quantity: count,
+    });
+
+    toast.success(`${product.name} added to cart!`);
+    window.dispatchEvent(new CustomEvent("cartUpdated"));
+
+    setCartQuantity((prev) => prev + count);
+  } catch (err) {
+    console.error("Error adding to cart:", err);
+    toast.error("Failed to add item to cart.");
+  }
+};
+
 
   /* ✅ FIXED: BUY NOW (NO STOCK REDUCTION HERE) */
   const handleBuyNow = () => {
