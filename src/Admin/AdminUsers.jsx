@@ -131,20 +131,60 @@ function AdminUsers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [orders, setOrders] = useState([]);
 
-  const fetchUsers = async () => {
-    setIsLoading(true);
-    try {
-      const res = await api.get("/users");
-      // Exclude admin users from the list
-      setUsers(res.data.filter(u => u.role !== 'admin') || []);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      toast.error("Failed to fetch users.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+const fetchUsers = async () => {
+  setIsLoading(true);
+  try {
+    const [usersRes, ordersRes] = await Promise.all([
+      api.get("/Admin/users"),
+      api.get("/admin/orders"),
+    ]);
+
+    const usersData = usersRes.data.data || [];
+    const ordersData = ordersRes.data.data || [];
+
+    // ✅ COUNT ORDERS PER USER
+
+
+    ordersData.forEach(order => {
+      ordersCountByUser[order.UserId] =
+        (ordersCountByUser[order.UserId] || 0) + 1;
+    });
+
+    // ✅ ATTACH ordersCount
+    const usersWithOrders = usersData.map(u => ({
+      ...u,
+      ordersCount: ordersCountByUser[u.id] || 0,
+    }));
+
+    setUsers(usersWithOrders);
+
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    toast.error("Failed to fetch users.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const fetchOrders = async () => {
+  try {
+    const res = await api.get("/admin/orders");
+    setOrders(res.data.data || []);
+  } catch (err) {
+    toast.error("Failed to fetch orders");
+  }
+};
+
+useEffect(() => {
+  fetchOrders();
+}, []);
+
+
+
+
 
   useEffect(() => {
     fetchUsers();
@@ -166,37 +206,49 @@ function AdminUsers() {
     }
   };
 
-  const handleToggleBlock = async (user) => {
-    const updatedStatus = !user.isBlocked;
-    const action = updatedStatus ? 'blocked' : 'unblocked';
-    const loadingToast = toast.loading(`Updating user status...`);
-    try {
-        await api.patch(`/users/${user.id}`, { isBlocked: updatedStatus });
-        toast.success(`User has been ${action}.`, { id: loadingToast });
-        fetchUsers();
-    } catch {
-        toast.error(`Failed to ${action} user.`, { id: loadingToast });
-    }
-  };
+const ordersCountByUser = useMemo(() => {
+  const map = {};
+  orders.forEach(order => {
+    map[order.userId] = (map[order.userId] || 0) + 1;
+  });
+  return map;
+}, [orders]);
+
+
+const handleToggleBlock = async (user) => {
+  const loadingToast = toast.loading("Updating user status...");
+  try {
+    await api.patch(`/Admin/users/${user.id}/block-toggle`);
+    toast.success(
+      user.isBlocked ? "User unblocked successfully" : "User blocked successfully",
+      { id: loadingToast }
+    );
+    fetchUsers();
+  } catch {
+    toast.error("Failed to update user status.", { id: loadingToast });
+  }
+};
+
 
   const handleDeleteRequest = (user) => {
     setUserToDelete(user);
     setShowDeleteConfirm(true);
   };
 
-  const confirmDeleteUser = async () => {
-    if (!userToDelete) return;
-    try {
-      await api.delete(`/users/${userToDelete.id}`);
-      toast.success(`User "${userToDelete.name}" deleted successfully!`);
-      fetchUsers();
-    } catch (err) {
-      toast.error("Failed to delete user.");
-    } finally {
-      setShowDeleteConfirm(false);
-      setUserToDelete(null);
-    }
-  };
+const confirmDeleteUser = async () => {
+  if (!userToDelete) return;
+
+  try {
+    await api.delete(`/Admin/users/${userToDelete.id}`);
+    toast.success(`User "${userToDelete.name}" deleted successfully!`);
+    fetchUsers();
+  } catch (err) {
+    toast.error("Failed to delete user.");
+  } finally {
+    setShowDeleteConfirm(false);
+    setUserToDelete(null);
+  }
+};
 
   const { currentUsers, totalPages } = useMemo(() => {
     const filtered = users.filter(u =>
@@ -277,7 +329,7 @@ function AdminUsers() {
                         <td className="p-3">
                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${u.isBlocked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>{u.isBlocked ? 'Blocked' : 'Active'}</span>
                         </td>
-                        <td className="p-3 font-medium text-center text-gray-700 dark:text-gray-300">{(u.orders || []).length}</td>
+                        <td className="p-3 font-medium text-center text-gray-700 dark:text-gray-300">{ordersCountByUser[u.id] || 0}</td>
                         <td className="p-3 text-center">
                           <div className="flex justify-center gap-2">
                             <button onClick={() => handleOpenEditModal(u)} className="p-2 text-gray-400 hover:bg-blue-100 hover:text-blue-500 rounded-full transition"><Edit size={16} /></button>

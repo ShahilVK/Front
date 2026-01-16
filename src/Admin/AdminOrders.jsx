@@ -90,55 +90,91 @@ function AdminOrders() {
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage] = useState(10);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+const STATUS_TO_ENUM = {
+  Pending: 1,
+  Paid: 2,
+  Shipped: 3,
+  Delivered: 4,
+  Cancelled: 5,
+};
 
-  const fetchOrders = async () => {
-    setIsLoading(true);
-    try {
-      const usersRes = await api.get("/users");
-      let allOrders = [];
-      (usersRes.data || []).forEach((user) => {
-        if (user.orders && Array.isArray(user.orders)) {
-          const userOrders = user.orders.map((order) => ({
-            ...order,
-            userId: user.id,
-            customerName: user.name,
-            customerEmail: user.email,
-          }));
-          allOrders.push(...userOrders);
-        }
-      });
-      allOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
-      setOrders(allOrders);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      toast.error("Failed to fetch orders.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+
+const FINAL_STATUSES = ["Delivered", "Cancelled"];
+
+
+
+const fetchOrders = async () => {
+  setIsLoading(true);
+  try {
+    const res = await api.get("/admin/orders");
+
+    const mappedOrders = res.data.data.map(o => ({
+      id: o.orderId,
+      userId: o.userId,
+      customerEmail: o.userEmail,
+      customerName: o.userEmail.split("@")[0],
+      date: o.orderDate,
+      total: o.totalAmount,
+      status: o.status,
+      items: o.items.map(i => ({
+        id: i.productId,
+        name: i.productName,
+        price: i.price,
+        quantity: i.quantity,
+        image: i.imageUrl
+      }))
+    }));
+
+    setOrders(mappedOrders);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to fetch orders");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
-  const handleUpdateStatus = async (orderId, userId, newStatus) => {
-    const loadingToast = toast.loading("Updating status...");
-    try {
-      const userRes = await api.get(`/users/${userId}`);
-      const user = userRes.data;
-      
-      const updatedOrders = user.orders.map(order => 
-        order.id === orderId ? { ...order, status: newStatus } : order
-      );
 
-      await api.patch(`/users/${userId}`, { orders: updatedOrders });
-      toast.success("Order status updated!", { id: loadingToast });
-      fetchOrders();
-    } catch (err) {
-      toast.error("Failed to update status.", { id: loadingToast });
-      console.error(err);
-    }
-  };
+
+// const handleUpdateStatus = async (orderId, _userId, newStatus) => {
+//   const loadingToast = toast.loading("Updating status...");
+//   try {
+//     await api.put(`/admin/orders/${orderId}/status`, {
+//       status: newStatus
+//     });
+
+//     toast.success("Order status updated", { id: loadingToast });
+//     fetchOrders();
+//   } catch (err) {
+//     toast.error("Failed to update status", { id: loadingToast });
+//   }
+// };
+const handleUpdateStatus = async (orderId, newStatus) => {
+  const loadingToast = toast.loading("Updating status...");
+
+  try {
+    await api.put(`/admin/orders/${orderId}/status`, {
+      status: STATUS_TO_ENUM[newStatus], // ✅ NUMBER
+    });
+
+    toast.success("Order status updated", { id: loadingToast });
+    fetchOrders();
+  } catch (err) {
+    toast.error(
+      err.response?.data?.message || "Failed to update status",
+      { id: loadingToast }
+    );
+  }
+};
+
+
+
+
 
   const handleDeleteRequest = (order) => {
     setOrderToDelete(order);
@@ -171,29 +207,36 @@ function AdminOrders() {
     setIsDetailsModalOpen(true);
   };
 
-  const { currentOrders, totalPages } = useMemo(() => {
-    const filtered = orders.filter(o =>
-      o.id.toLowerCase().includes(search.toLowerCase()) ||
-      o.customerName.toLowerCase().includes(search.toLowerCase())
-    );
-    const pages = Math.ceil(filtered.length / ordersPerPage);
-    const paginated = filtered.slice((currentPage - 1) * ordersPerPage, currentPage * ordersPerPage);
-    return { currentOrders: paginated, totalPages: pages };
-  }, [orders, search, currentPage, ordersPerPage]);
+const { currentOrders, totalPages } = useMemo(() => {
+  const filtered = orders.filter(o =>
+    String(o.id).includes(search) ||
+    o.customerName.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const pages = Math.ceil(filtered.length / ordersPerPage);
+  const paginated = filtered.slice(
+    (currentPage - 1) * ordersPerPage,
+    currentPage * ordersPerPage
+  );
+
+  return { currentOrders: paginated, totalPages: pages };
+}, [orders, search, currentPage, ordersPerPage]);
+
 
   const handlePageChange = (newPage) => {
     if (newPage > 0 && newPage <= totalPages) setCurrentPage(newPage);
   };
   
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Processing': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'Shipped': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'Delivered': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'Canceled': return 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-    }
-  };
+const getStatusBadge = (status) => {
+  switch (status) {
+    case "Pending": return "bg-blue-100 text-blue-800";
+    case "Paid": return "bg-indigo-100 text-indigo-800";
+    case "Shipped": return "bg-yellow-100 text-yellow-800";
+    case "Delivered": return "bg-green-100 text-green-800";
+    case "Cancelled": return "bg-red-100 text-red-800";
+    default: return "bg-gray-100 text-gray-800";
+  }
+};
 
   const renderSkeletonLoader = () => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-4 animate-pulse">
@@ -267,16 +310,33 @@ function AdminOrders() {
                         </td>
                         <td className="p-3 font-medium text-gray-700 dark:text-gray-300">₹{Number(o.total || 0).toFixed(2)}</td>
                         <td className="p-3">
-                          <select 
+{/*                           <select 
                             value={o.status} 
-                            onChange={(e) => handleUpdateStatus(o.id, o.userId, e.target.value)}
+                            onChange={(e) => handleUpdateStatus(o.id, o.userId, e.target.value, o.status)}
                             className={`px-2 py-1 text-xs font-semibold rounded-full border-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent ${getStatusBadge(o.status)}`}
                           >
                             <option value="Processing">Processing</option>
                             <option value="Shipped">Shipped</option>
                             <option value="Delivered">Delivered</option>
                             <option value="Canceled">Canceled</option>
-                          </select>
+                          </select> */}
+                          <select
+  value={o.status}
+  onChange={(e) =>
+    handleUpdateStatus(o.id, e.target.value)
+  }
+  disabled={["Delivered", "Cancelled"].includes(o.status)}
+  className={`px-2 py-1 text-xs font-semibold rounded-full
+    ${getStatusBadge(o.status)}
+    disabled:opacity-50 disabled:cursor-not-allowed`}
+>
+  <option value="Pending">Pending</option>
+  <option value="Paid">Paid</option>
+  <option value="Shipped">Shipped</option>
+  <option value="Delivered">Delivered</option>
+  <option value="Cancelled">Cancelled</option>
+</select>
+
                         </td>
                         <td className="p-3 text-center">
                           <div className="flex justify-center gap-2">

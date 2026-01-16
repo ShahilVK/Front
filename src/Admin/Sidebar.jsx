@@ -7,7 +7,6 @@ const Sidebar = () => {
   const location = useLocation(); 
   const navigate = useNavigate();
 
-  // ✨ FIX: Paths are now nested correctly under /dashboard for proper routing
   const menuItems = [
     { name: "Dashboard", icon: <Home size={18} />, path: "/dashboard" },
     { name: "Products", icon: <Box size={18} />, path: "/adminproducts" },

@@ -79,17 +79,22 @@ export function AdminSettings() {
   // Appearance State
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
-  useEffect(() => {
-    const fetchAdminData = async () => {
-        try {
-            const res = await api.get(`/users/${adminId}`);
-            setAdminUser({ name: res.data.name, email: res.data.email });
-        } catch (error) {
-            toast.error("Could not load admin details.");
-        }
-    };
-    fetchAdminData();
-  }, [adminId]);
+useEffect(() => {
+  const fetchAdminData = async () => {
+    try {
+      const res = await api.get("/users/my-profile");
+      setAdminUser({
+        name: res.data.data.name,
+        email: res.data.data.email,
+      });
+    } catch {
+      toast.error("Could not load admin details.");
+    }
+  };
+
+  fetchAdminData();
+}, []);
+
 
   useEffect(() => {
     if (darkMode) {
@@ -111,35 +116,46 @@ export function AdminSettings() {
     setPasswordData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleProfileSave = async (e) => {
-    e.preventDefault();
-    const loadingToast = toast.loading("Saving profile...");
-    try {
-        await api.patch(`/users/${adminId}`, { name: adminUser.name, email: adminUser.email });
-        toast.success("Profile updated successfully!", { id: loadingToast });
-    } catch {
-        toast.error("Failed to update profile.", { id: loadingToast });
-    }
-  };
+const handleProfileSave = async (e) => {
+  e.preventDefault();
+  const loadingToast = toast.loading("Saving profile...");
+
+  try {
+    await api.patch("/users/Update Profile", {
+      name: adminUser.name,
+      email: adminUser.email,
+    });
+
+    toast.success("Profile updated successfully!", { id: loadingToast });
+  } catch {
+    toast.error("Failed to update profile.", { id: loadingToast });
+  }
+};
+
   
-  const handlePasswordSave = async (e) => {
-    e.preventDefault();
-    if (passwordData.new !== passwordData.confirm) {
-        return toast.error("New passwords do not match.");
-    }
-    if (passwordData.new.length < 8) {
-        return toast.error("Password must be at least 8 characters long.");
-    }
-    // In a real app, you would verify the current password against the backend
-    const loadingToast = toast.loading("Changing password...");
-    try {
-        await api.patch(`/users/${adminId}`, { password: passwordData.new });
-        toast.success("Password changed successfully!", { id: loadingToast });
-        setPasswordData({ current: '', new: '', confirm: '' });
-    } catch {
-        toast.error("Failed to change password.", { id: loadingToast });
-    }
-  };
+ const handlePasswordSave = async (e) => {
+  e.preventDefault();
+
+  if (passwordData.new !== passwordData.confirm)
+    return toast.error("New passwords do not match.");
+
+  const loadingToast = toast.loading("Changing password...");
+
+  try {
+    await api.put("/users/change-password", {
+      currentPassword: passwordData.current,
+      newPassword: passwordData.new,
+    });
+
+    toast.success("Password changed successfully!", { id: loadingToast });
+    setPasswordData({ current: "", new: "", confirm: "" });
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed to change password.", {
+      id: loadingToast,
+    });
+  }
+};
+
 
 
   return (
