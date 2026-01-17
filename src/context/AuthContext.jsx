@@ -23,50 +23,50 @@
 //     setLoading(false);
 //   }, []);
 
-//   const signup = async (newUser) => {
-//     const name = newUser.name.trim();
-//     const email = newUser.email.trim().toLowerCase();
-//     const password = newUser.password;
+  // const signup = async (newUser) => {
+  //   const name = newUser.name.trim();
+  //   const email = newUser.email.trim().toLowerCase();
+  //   const password = newUser.password;
 
-//     const nameRegex = /^[A-Za-z]{3,50}$/;
-//     const emailRegex = /^[a-z0-9]+([._%+-][a-z0-9]+)*@[a-z0-9-]+\.com$/;
-//     const passwordRegex =
-//       /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])(?!.*\s)(?!.*(.)\1\1).{8,50}$/;
+  //   const nameRegex = /^[A-Za-z]{3,50}$/;
+  //   const emailRegex = /^[a-z0-9]+([._%+-][a-z0-9]+)*@[a-z0-9-]+\.com$/;
+  //   const passwordRegex =
+  //     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])(?!.*\s)(?!.*(.)\1\1).{8,50}$/;
 
-//     if (!nameRegex.test(name)) {
-//       return toast.error("Name must contain only letters (no spaces)");
-//     }
+  //   if (!nameRegex.test(name)) {
+  //     return toast.error("Name must contain only letters (no spaces)");
+  //   }
 
-//     if (!emailRegex.test(email)) {
-//       return toast.error("Email must be a valid .com email");
-//     }
+  //   if (!emailRegex.test(email)) {
+  //     return toast.error("Email must be a valid .com email");
+  //   }
 
-//     if (!passwordRegex.test(password)) {
-//       return toast.error(
-//         "Password must contain uppercase, lowercase, number & special character"
-//       );
-//     }
+  //   if (!passwordRegex.test(password)) {
+  //     return toast.error(
+  //       "Password must contain uppercase, lowercase, number & special character"
+  //     );
+  //   }
 
-//     try {
-//       await api.post("/auth/register", {
-//         name,
-//         email,
-//         password,
-//       });
+  //   try {
+  //     await api.post("/auth/register", {
+  //       name,
+  //       email,
+  //       password,
+  //     });
 
-//       toast.success("Signup successful! Please login.");
+  //     toast.success("Signup successful! Please login.");
 
-//       setTimeout(() => {
-//         navigate("/login");
-//       }, 1200); // ⏱️ allow toast to show
-//     } catch (err) {
-//       console.error("Signup failed:", err);
+  //     setTimeout(() => {
+  //       navigate("/login");
+  //     }, 1200); // ⏱️ allow toast to show
+  //   } catch (err) {
+  //     console.error("Signup failed:", err);
 
-//       toast.error(
-//         err.response?.data?.message || "Signup failed. Please check your input."
-//       );
-//     }
-//   };
+  //     toast.error(
+  //       err.response?.data?.message || "Signup failed. Please check your input."
+  //     );
+  //   }
+  // };
 
   
 
@@ -156,6 +156,53 @@ const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  
+  const signup = async (newUser) => {
+    const name = newUser.name.trim();
+    const email = newUser.email.trim().toLowerCase();
+    const password = newUser.password;
+
+    const nameRegex = /^[A-Za-z]{3,50}$/;
+    const emailRegex = /^[a-z0-9]+([._%+-][a-z0-9]+)*@[a-z0-9-]+\.com$/;
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])(?!.*\s)(?!.*(.)\1\1).{8,50}$/;
+
+    if (!nameRegex.test(name)) {
+      return toast.error("Name must contain only letters (no spaces)");
+    }
+
+    if (!emailRegex.test(email)) {
+      return toast.error("Email must be a valid .com email");
+    }
+
+    if (!passwordRegex.test(password)) {
+      return toast.error(
+        "Password must contain uppercase, lowercase, number & special character"
+      );
+    }
+
+    try {
+      await api.post("/auth/register", {
+        name,
+        email,
+        password,
+      });
+
+      toast.success("Signup successful! Please login.");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1200); // ⏱️ allow toast to show
+    } catch (err) {
+      console.error("Signup failed:", err);
+
+      toast.error(
+        err.response?.data?.message || "Signup failed. Please check your input."
+      );
+    }
+  };
+
+
   // ---------------- LOGIN ----------------
   const login = async (email, password) => {
     try {
@@ -192,9 +239,16 @@ const AuthProvider = ({ children }) => {
       }, 300);
 
     } catch (err) {
-      console.error("Login failed:", err);
-      toast.error(err.response?.data?.message || "Login failed");
-    }
+  console.error("Login failed:", err);
+
+  const message =
+    err.response?.data?.message ||
+    err.response?.data?.error ||
+    "Invalid email or password";
+
+  toast.error(message);
+}
+
   };
 
   // ---------------- LOGOUT ----------------

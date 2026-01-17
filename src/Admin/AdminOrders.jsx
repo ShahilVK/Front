@@ -92,15 +92,10 @@ function AdminOrders() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 const STATUS_TO_ENUM = {
   Pending: 1,
-  Paid: 2,
-  Shipped: 3,
-  Delivered: 4,
-  Cancelled: 5,
+  Shipped: 2,
+  Delivered: 3,
+  Cancelled: 4,
 };
-
-
-
-const FINAL_STATUSES = ["Delivered", "Cancelled"];
 
 
 
@@ -140,20 +135,6 @@ const fetchOrders = async () => {
   }, []);
 
 
-
-// const handleUpdateStatus = async (orderId, _userId, newStatus) => {
-//   const loadingToast = toast.loading("Updating status...");
-//   try {
-//     await api.put(`/admin/orders/${orderId}/status`, {
-//       status: newStatus
-//     });
-
-//     toast.success("Order status updated", { id: loadingToast });
-//     fetchOrders();
-//   } catch (err) {
-//     toast.error("Failed to update status", { id: loadingToast });
-//   }
-// };
 const handleUpdateStatus = async (orderId, newStatus) => {
   const loadingToast = toast.loading("Updating status...");
 
@@ -181,27 +162,32 @@ const handleUpdateStatus = async (orderId, newStatus) => {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDeleteOrder = async () => {
-    if (!orderToDelete) return;
-    try {
-        const { id: orderId, userId } = orderToDelete;
-        const userRes = await api.get(`/users/${userId}`);
-        const user = userRes.data;
-        
-        const updatedOrders = user.orders.filter(order => order.id !== orderId);
-        
-        await api.patch(`/users/${userId}`, { orders: updatedOrders });
-        toast.success(`Order #${orderId} deleted successfully!`);
-        fetchOrders();
-    } catch (err) {
-        toast.error("Failed to delete order.");
-        console.error(err);
-    } finally {
-        setShowDeleteConfirm(false);
-        setOrderToDelete(null);
-    }
-  };
-  
+const confirmDeleteOrder = async () => {
+  if (!orderToDelete) return;
+
+  const loadingToast = toast.loading("Deleting order...");
+
+  try {
+    await api.delete(`/admin/orders/${orderToDelete.id}`);
+
+    toast.success(`Order #${orderToDelete.id} deleted successfully`, {
+      id: loadingToast,
+    });
+
+    fetchOrders();
+  } catch (err) {
+    toast.error(
+      err.response?.data?.message || "Failed to delete order",
+      { id: loadingToast }
+    );
+    console.error(err);
+  } finally {
+    setShowDeleteConfirm(false);
+    setOrderToDelete(null);
+  }
+};
+
+
   const handleViewDetails = (order) => {
     setSelectedOrder(order);
     setIsDetailsModalOpen(true);
@@ -230,13 +216,25 @@ const { currentOrders, totalPages } = useMemo(() => {
 const getStatusBadge = (status) => {
   switch (status) {
     case "Pending": return "bg-blue-100 text-blue-800";
-    case "Paid": return "bg-indigo-100 text-indigo-800";
     case "Shipped": return "bg-yellow-100 text-yellow-800";
     case "Delivered": return "bg-green-100 text-green-800";
     case "Cancelled": return "bg-red-100 text-red-800";
     default: return "bg-gray-100 text-gray-800";
   }
 };
+
+const getNextStatuses = (currentStatus) => {
+  switch (currentStatus) {
+    case "Pending":
+      return ["Shipped", "Cancelled"];
+    case "Shipped":
+      return ["Delivered"];
+    default:
+      return [];
+  }
+};
+
+
 
   const renderSkeletonLoader = () => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-4 animate-pulse">
@@ -310,32 +308,24 @@ const getStatusBadge = (status) => {
                         </td>
                         <td className="p-3 font-medium text-gray-700 dark:text-gray-300">₹{Number(o.total || 0).toFixed(2)}</td>
                         <td className="p-3">
-{/*                           <select 
-                            value={o.status} 
-                            onChange={(e) => handleUpdateStatus(o.id, o.userId, e.target.value, o.status)}
-                            className={`px-2 py-1 text-xs font-semibold rounded-full border-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent ${getStatusBadge(o.status)}`}
-                          >
-                            <option value="Processing">Processing</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                            <option value="Canceled">Canceled</option>
-                          </select> */}
-                          <select
+
+<select
   value={o.status}
-  onChange={(e) =>
-    handleUpdateStatus(o.id, e.target.value)
-  }
+  onChange={(e) => handleUpdateStatus(o.id, e.target.value)}
   disabled={["Delivered", "Cancelled"].includes(o.status)}
   className={`px-2 py-1 text-xs font-semibold rounded-full
     ${getStatusBadge(o.status)}
     disabled:opacity-50 disabled:cursor-not-allowed`}
 >
-  <option value="Pending">Pending</option>
-  <option value="Paid">Paid</option>
-  <option value="Shipped">Shipped</option>
-  <option value="Delivered">Delivered</option>
-  <option value="Cancelled">Cancelled</option>
+  <option value={o.status}>{o.status}</option>
+
+  {getNextStatuses(o.status).map((status) => (
+    <option key={status} value={status}>
+      {status}
+    </option>
+  ))}
 </select>
+
 
                         </td>
                         <td className="p-3 text-center">

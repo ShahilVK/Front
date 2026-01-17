@@ -607,76 +607,56 @@ const { filteredUsers, stats, chartData, salesByCategory } = useMemo(() => {
           onMouseEnter={() => setIsSidebarCollapsed(false)}
           onMouseLeave={() => setIsSidebarCollapsed(true)}
         />
-                 {" "}
         <main className="flex-1 flex flex-col overflow-hidden">
-                     {" "}
           <div className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-                         {" "}
             <div className="flex justify-between items-center mb-6">
-                             {" "}
               <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
                 Admin Dashboard
               </h1>
-                             {" "}
               <div className="flex items-center gap-4">
-                                 {" "}
                 <button
                   onClick={() => setDarkMode(!darkMode)}
                   className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
                 >
-                                     {" "}
                   {darkMode ? (
                     <Sun className="text-yellow-400" />
                   ) : (
                     <Moon className="text-gray-700" />
                   )}
-                                   {" "}
                 </button>
-                               {" "}
               </div>
-                           {" "}
             </div>
-                         {" "}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                             {" "}
               <StatCard
                 title="Total Revenue"
                 value={`₹${stats.revenue}`}
                 icon={<DollarSign />}
                 color="#10B981"
               />
-                             {" "}
               <StatCard
                 title="Total Sales"
                 value={stats.sales}
                 icon={<ShoppingCart />}
                 color="#3B82F6"
               />
-                             {" "}
               <StatCard
                 title="Total Customers"
                 value={stats.customers}
                 icon={<Users />}
                 color="#8B5CF6"
               />
-                             {" "}
               <StatCard
                 title="Total Products"
                 value={stats.products}
                 icon={<Package />}
                 color="#F59E0B"
               />
-                           {" "}
             </div>
-                         {" "}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-                             {" "}
               <div className="lg:col-span-3 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-                                   {" "}
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">
                   Revenue Trend
                 </h2>
-                                   {" "}
                 <div className="h-80">
                   <Line
                     data={chartData}
@@ -686,15 +666,11 @@ const { filteredUsers, stats, chartData, salesByCategory } = useMemo(() => {
                     }}
                   />
                 </div>
-                               {" "}
               </div>
-                             {" "}
               <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-                                   {" "}
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">
                   Sales by Category
                 </h2>
-                                   {" "}
                 <div className="h-80">
                   <Pie
                     data={salesByCategory}
@@ -704,18 +680,13 @@ const { filteredUsers, stats, chartData, salesByCategory } = useMemo(() => {
                     }}
                   />
                 </div>
-                               {" "}
               </div>
-                           {" "}
             </div>
-                         {" "}
             <div className="relative mb-4">
-                               {" "}
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                 size={20}
               />
-                               {" "}
               <input
                 type="text"
                 placeholder="Search customers by name or email..."
@@ -723,20 +694,16 @@ const { filteredUsers, stats, chartData, salesByCategory } = useMemo(() => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full p-3 pl-10 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               />
-                           {" "}
             </div>
-                         {" "}
             <UsersTable
               users={filteredUsers}
               onEdit={handleOpenEditModal}
               onBlock={handleToggleBlockUser}
               onDelete={handleDeleteUser}
             />
-                       {" "}
           </div>
-                      <Footer />         {" "}
+    <Footer />
         </main>
-                 {" "}
         {showEditModal && (
           <UserEditModal
             user={selectedUser}
@@ -744,9 +711,7 @@ const { filteredUsers, stats, chartData, salesByCategory } = useMemo(() => {
             onSave={handleUpdateUser}
           />
         )}
-               {" "}
       </div>
-           {" "}
     </AuthContext.Provider>
   );
 }

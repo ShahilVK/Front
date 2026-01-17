@@ -70,53 +70,88 @@ const Payment = () => {
     setBillingInfo({ ...billingInfo, [e.target.name]: e.target.value });
 
 
-  // const handlePayment = async () => {
-  //   const { name, phone, address } = billingInfo;
+// const handlePayment = async () => {
+//   const { name, phone, address } = billingInfo;
 
-  //   if (!name || !phone || !address) {
-  //     return toast.error("Please fill all billing details");
-  //   }
+//   if (!name || !phone || !address) {
+//     return toast.error("Please fill all billing details");
+//   }
 
-  //   try {
-  //     if (buyNowItem) {
-  //       await api.post("/orders/Direct Order", {
-  //         productId: buyNowItem.productId,
-  //         quantity: buyNowItem.quantity,
+//   try {
+//     let orderId;
 
-  //         fullName: billingInfo.name,
-  //         phoneNumber: billingInfo.phone,
-  //         addressLine: billingInfo.address,
-  //         city: "NA",
-  //         state: "NA",
-  //         postalCode: "000000",
-  //         country: "India",
-  //       });
+//     if (buyNowItem) {
+//       const res = await api.post("/orders/Direct Order", {
+//         productId: buyNowItem.productId,
+//         quantity: buyNowItem.quantity,
+//         fullName: billingInfo.name,
+//         phoneNumber: billingInfo.phone,
+//         addressLine: billingInfo.address,
+//         city: "NA",
+//         state: "NA",
+//         postalCode: "000000",
+//         country: "India",
+//       });
 
-  //       toast.success("Order placed successfully!");
-  //       window.dispatchEvent(new Event("cartUpdated"));
-  //       navigate("/ordersuccess");
-  //       return;
-  //     }
+//       orderId = res.data.data; // backend should return orderId
+//     } else {
+//       const res = await api.post("/orders/Order Inside Cart", {
+//         fullName: billingInfo.name,
+//         phoneNumber: billingInfo.phone,
+//         addressLine: billingInfo.address,
+//         city: "NA",
+//         state: "NA",
+//         postalCode: "000000",
+//         country: "India",
+//       });
 
-  //     // ✅ CART CHECKOUT
-  //     await api.post("/orders/Order Inside Cart", {
-  //       fullName: billingInfo.name,
-  //       phoneNumber: billingInfo.phone,
-  //       addressLine: billingInfo.address,
-  //       city: "NA",
-  //       state: "NA",
-  //       postalCode: "000000",
-  //       country: "India",
-  //     });
+//       orderId = res.data.data; // backend should return orderId
+//     }
 
-  //     toast.success("Order placed successfully!");
-  //     window.dispatchEvent(new Event("cartUpdated"));
-  //     navigate("/ordersuccess");
-  //   } catch (error) {
-  //     console.error("Payment failed:", error);
-  //     toast.error("Payment failed");
-  //   }
-  // };
+//     const loaded = await loadRazorpay();
+//     if (!loaded) {
+//       toast.error("Razorpay SDK failed to load");
+//       return;
+//     }
+
+//     const paymentRes = await api.post("/payments/razorpay/payment", {
+//       orderId: orderId,
+//     });
+
+//     const { razorpayOrderId, amount } = paymentRes.data.data;
+
+//     const options = {
+//       key: "rzp_test_S3EOfbXxHEP8yy", // TEST KEY ONLY
+//       amount: amount * 100,
+//       currency: "INR",
+//       name: "TekTrov",
+//       description: "Order Payment",
+//       order_id: razorpayOrderId,
+
+//       handler: async function (response) {
+//         await api.post("/payments/razorpay/payment", {
+//           orderId: orderId,
+//           razorpayOrderId: response.razorpay_order_id,
+//           razorpayPaymentId: response.razorpay_payment_id,
+//           razorpaySignature: response.razorpay_signature,
+//         });
+
+//         toast.success("Payment successful!");
+//         window.dispatchEvent(new Event("cartUpdated"));
+//         navigate("/ordersuccess");
+//       },
+
+//       theme: { color: "#facc15" },
+//     };
+
+//     const rzp = new window.Razorpay(options);
+//     rzp.open();
+//   } catch (error) {
+//     console.error("Payment failed:", error);
+//     toast.error("Payment failed");
+//   }
+// };
+
 
 const handlePayment = async () => {
   const { name, phone, address } = billingInfo;
@@ -128,48 +163,51 @@ const handlePayment = async () => {
   try {
     let orderId;
 
+    // 1️⃣ CREATE ORDER (NO STOCK CHANGE HERE)
     if (buyNowItem) {
       const res = await api.post("/orders/Direct Order", {
         productId: buyNowItem.productId,
         quantity: buyNowItem.quantity,
-        fullName: billingInfo.name,
-        phoneNumber: billingInfo.phone,
-        addressLine: billingInfo.address,
+        fullName: name,
+        phoneNumber: phone,
+        addressLine: address,
         city: "NA",
         state: "NA",
         postalCode: "000000",
         country: "India",
       });
-
-      orderId = res.data.data; // backend should return orderId
+      orderId = res.data.data;
     } else {
-      const res = await api.post("/orders/Order Inside Cart", {
-        fullName: billingInfo.name,
-        phoneNumber: billingInfo.phone,
-        addressLine: billingInfo.address,
+      const res = await api.post("/orders/Order-Inside-Cart", {
+        fullName: name,
+        phoneNumber: phone,
+        addressLine: address,
         city: "NA",
         state: "NA",
         postalCode: "000000",
         country: "India",
       });
-
-      orderId = res.data.data; // backend should return orderId
+      orderId = res.data.data;
     }
 
+    // 2️⃣ LOAD RAZORPAY
     const loaded = await loadRazorpay();
-    if (!loaded) {
-      toast.error("Razorpay SDK failed to load");
-      return;
-    }
+    if (!loaded) return toast.error("Razorpay SDK failed");
 
-    const paymentRes = await api.post("/payments/razorpay/payment", {
-      orderId: orderId,
-    });
+const paymentRes = await api.post(
+  "/payments/razorpay/create-order",
+  {
+    orderId: orderId,
+    amount: totalAmount,
+  }
+);
 
-    const { razorpayOrderId, amount } = paymentRes.data.data;
+const { razorpayOrderId, amount } = paymentRes.data.data;
 
+
+    // 4️⃣ OPEN RAZORPAY
     const options = {
-      key: "rzp_test_S3EOfbXxHEP8yy", // TEST KEY ONLY
+      key: "rzp_test_S3EOfbXxHEP8yy",
       amount: amount * 100,
       currency: "INR",
       name: "TekTrov",
@@ -177,12 +215,14 @@ const handlePayment = async () => {
       order_id: razorpayOrderId,
 
       handler: async function (response) {
-        await api.post("/payments/razorpay/payment", {
-          orderId: orderId,
-          razorpayOrderId: response.razorpay_order_id,
-          razorpayPaymentId: response.razorpay_payment_id,
-          razorpaySignature: response.razorpay_signature,
-        });
+        // ✅ 5️⃣ PAYMENT SUCCESS → BACKEND CONFIRMATION
+       await api.post("/payments/razorpay/payment", {
+  orderId: orderId,
+  razorpayOrderId: response.razorpay_order_id,
+  razorpayPaymentId: response.razorpay_payment_id,
+  razorpaySignature: response.razorpay_signature,
+});
+
 
         toast.success("Payment successful!");
         window.dispatchEvent(new Event("cartUpdated"));
@@ -192,13 +232,13 @@ const handlePayment = async () => {
       theme: { color: "#facc15" },
     };
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
-  } catch (error) {
-    console.error("Payment failed:", error);
+    new window.Razorpay(options).open();
+  } catch (err) {
+    console.error(err);
     toast.error("Payment failed");
   }
 };
+
 
 
 
