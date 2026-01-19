@@ -1,7 +1,5 @@
-
-
 import React, { useEffect, useState, useContext, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import {useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart,
@@ -27,41 +25,58 @@ function Product() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [products, setProducts] = useState([]);
-  const [error, setError] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [sortBy, setSortBy] = useState("default");
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [cartProductIds, setCartProductIds] = useState(new Set());
 
   const { wishlist, toggleWishlist } = useWishlist();
   const { user } = useContext(AuthContext);
-  const location = useLocation();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        const res = debouncedSearch
+          ? await api.get(
+              `/products/search?query=${encodeURIComponent(debouncedSearch)}`,
+            )
+          : await api.get("/products");
 
+        setProducts(res.data.data || []);
+      } catch (err) {
+        setProducts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-useEffect(() => {
-  const fetchProducts = async () => {
-    try {
-      setIsLoading(true);
-      const res = debouncedSearch
-        ? await api.get(`/products/search?query=${encodeURIComponent(debouncedSearch)}`)
-        : await api.get("/products");
+    fetchProducts();
+  }, [debouncedSearch]);
 
-      setProducts(res.data.data || []);
-    } catch (err) {
-      setProducts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchCartProducts = async () => {
+      if (!user) return;
 
-  fetchProducts();
-}, [debouncedSearch]);
+      try {
+        const res = await api.get("/cart");
+        const items = res.data?.data || [];
+        setCartProductIds(new Set(items.map((i) => i.productId)));
+      } catch {
+        setCartProductIds(new Set());
+      }
+    };
 
+    fetchCartProducts();
 
+    const handler = () => fetchCartProducts();
+    window.addEventListener("cartUpdated", handler);
 
+    return () => window.removeEventListener("cartUpdated", handler);
+  }, [user]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -79,7 +94,6 @@ useEffect(() => {
     "Watches",
     "Power Bank",
   ];
-
 
   const displayedProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
@@ -101,15 +115,11 @@ useEffect(() => {
     if (sortBy === "popular")
       items.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
-    // ✅ CATEGORY FILTER
     if (selectedCategory !== "All") {
       items = items.filter(
-        (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase()
+        (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase(),
       );
     }
-
-
-   
 
     return items;
   }, [products, selectedCategory, debouncedSearch, sortBy]);
@@ -126,7 +136,6 @@ useEffect(() => {
     } catch (error) {
       console.error("Add to cart error:", error);
 
-      // ✅ IMPORTANT FIX
       if (error.response?.status === 500) {
         toast.error("Product is out of stock");
       } else {
@@ -201,7 +210,6 @@ useEffect(() => {
       <main className="flex-grow pt-20">
         {!selectedProduct ? (
           <>
-            {/* Hero Section */}
             <section className="relative bg-gradient-to-r from-gray-900 via-purple-900 to-gray-900 text-white py-20 sm:py-28 overflow-hidden">
               <div className="absolute inset-0 bg-black/40"></div>
               <div className="relative max-w-7xl mx-auto px-4 text-center z-10">
@@ -235,7 +243,6 @@ useEffect(() => {
                 className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 p-6 md:p-8 mb-12"
               >
                 <div className="flex flex-col lg:flex-row gap-6 items-stretch lg:items-center">
-              
                   <div className="relative flex-1">
                     <Search
                       className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -268,7 +275,7 @@ useEffect(() => {
                         onClick={() => {
                           setSelectedCategory(cat);
                           setSearchTerm("");
-                           setDebouncedSearch("");
+                          // setDebouncedSearch("");
                         }}
                         className={`px-5 py-3 rounded-xl font-semibold whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${
                           selectedCategory === cat
@@ -410,7 +417,7 @@ useEffect(() => {
                                   whileTap={{ scale: 0.9 }}
                                   className={`p-3 rounded-full hover:bg-purple-600 hover:text-white transition-all shadow-lg ${
                                     wishlist.some(
-                                      (item) => item.id === product.id
+                                      (item) => item.id === product.id,
                                     )
                                       ? "bg-red-500 text-white"
                                       : "bg-white text-gray-800"
@@ -420,7 +427,7 @@ useEffect(() => {
                                     size={20}
                                     fill={
                                       wishlist.some(
-                                        (item) => item.id === product.id
+                                        (item) => item.id === product.id,
                                       )
                                         ? "currentColor"
                                         : "none"
@@ -468,25 +475,41 @@ useEffect(() => {
                                   )}
                                 </div>
 
-                                <motion.button
-                                  disabled={product.stock <= 0}
-                                  onClick={() => handleAddToCart(product)}
-                                  whileHover={
-                                    product.stock > 0 ? { scale: 1.05 } : {}
-                                  }
-                                  whileTap={
-                                    product.stock > 0 ? { scale: 0.95 } : {}
-                                  }
-                                  className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2
-    ${
-      product.stock <= 0
-        ? "bg-gray-400 cursor-not-allowed"
-        : "bg-gradient-to-r from-amber-500 to-amber-600 text-white"
-    }`}
-                                >
-                                  <ShoppingCart size={18} />
-                                  {product.stock <= 0 ? "Out of Stock" : "Add"}
-                                </motion.button>
+                      
+                                {cartProductIds.has(product.id) ? (
+                                  <motion.button
+                                    onClick={() => navigate("/cart")}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="px-6 py-3 rounded-xl font-semibold flex items-center gap-2
+      bg-green-600 text-white"
+                                  >
+                                    <ShoppingCart size={18} />
+                                    Go to Cart
+                                  </motion.button>
+                                ) : (
+                                  <motion.button
+                                    disabled={product.stock <= 0}
+                                    onClick={() => handleAddToCart(product)}
+                                    whileHover={
+                                      product.stock > 0 ? { scale: 1.05 } : {}
+                                    }
+                                    whileTap={
+                                      product.stock > 0 ? { scale: 0.95 } : {}
+                                    }
+                                    className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2
+      ${
+        product.stock <= 0
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-gradient-to-r from-amber-500 to-amber-600 text-white"
+      }`}
+                                  >
+                                    <ShoppingCart size={18} />
+                                    {product.stock <= 0
+                                      ? "Out of Stock"
+                                      : "Add"}
+                                  </motion.button>
+                                )}
                               </div>
                             </div>
                           </motion.div>

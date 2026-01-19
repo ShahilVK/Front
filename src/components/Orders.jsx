@@ -185,6 +185,8 @@ const OrderStatusTracker = ({ status }) => {
   const statuses = ["Processing", "Shipped", "Delivered"];
   const currentStatusIndex = statuses.indexOf(status);
 
+
+
   return (
     <div className="flex justify-between items-center w-full px-4 pt-4">
       {statuses.map((s, index) => {
@@ -233,16 +235,40 @@ const Orders = () => {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const { user } = useAuth();
 
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
+
 
   const API_BASE_URL = "https://localhost:7155";
 
-const buildImageUrl = (url) => {
-  if (!url) return "/assets/no-image.png";
-  if (url.startsWith("http")) return url;
-  return `${API_BASE_URL}/${url.replace(/^\/+/, "")}`;
+  const buildImageUrl = (url) => {
+    if (!url) return "/assets/no-image.png";
+    if (url.startsWith("http")) return url;
+    return `${API_BASE_URL}/${url.replace(/^\/+/, "")}`;
+  };
+
+
+  const handleCancelOrder = async (orderId) => {
+  if (!window.confirm("Are you sure you want to cancel this order?")) return;
+
+  try {
+    setCancellingOrderId(orderId);
+
+    await api.post(`/orders/${orderId}/cancel`);
+
+    setOrders(prev =>
+      prev.map(o =>
+        o.id === orderId ? { ...o, status: "Cancelled" } : o
+      )
+    );
+  } catch (err) {
+    alert(
+      err?.response?.data?.message ||
+      "Unable to cancel order"
+    );
+  } finally {
+    setCancellingOrderId(null);
+  }
 };
-
-
 
 
   useEffect(() => {
@@ -262,11 +288,11 @@ const buildImageUrl = (url) => {
             name: item.productName,
             price: item.price,
             quantity: item.quantity,
-           image: buildImageUrl(item.imageUrl),
+            image: buildImageUrl(item.imageUrl),
           })),
         }));
 
-        setOrders(normalizedOrders.reverse());
+        setOrders(normalizedOrders);
       } catch (error) {
         console.error("Failed to fetch orders", error);
       } finally {
@@ -288,9 +314,6 @@ const buildImageUrl = (url) => {
   if (loading) {
     return <div className="text-center py-20">Loading your orders...</div>;
   }
-
-
-
 
   return (
     <div className="bg-gray-100 min-h-screen pt-10">
@@ -327,7 +350,9 @@ const buildImageUrl = (url) => {
             animate="visible"
             variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
           >
-            {orders.map((order) => {
+            {[...orders] 
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .map((order) => {
               const isExpanded = expandedOrderId === order.id;
               return (
                 <motion.div
@@ -378,6 +403,25 @@ const buildImageUrl = (url) => {
                         className="overflow-hidden"
                       >
                         <OrderStatusTracker status={order.status} />
+                        {order.status === "Pending" && (
+                          <div className="px-4 pt-3 flex justify-end">
+                            <button
+                              onClick={() => handleCancelOrder(order.id)}
+                              disabled={cancellingOrderId === order.id}
+                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition
+        ${
+          cancellingOrderId === order.id
+            ? "bg-gray-300 cursor-not-allowed"
+            : "bg-red-500 hover:bg-red-600 text-white"
+        }`}
+                            >
+                              {cancellingOrderId === order.id
+                                ? "Cancelling..."
+                                : "Cancel Order"}
+                            </button>
+                          </div>
+                        )}
+
                         <div className="p-4">
                           <div className="space-y-4">
                             {(order.items || []).map((item) => (

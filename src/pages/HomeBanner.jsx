@@ -123,25 +123,9 @@ const HomeBannerWithBg = () => {
             </AnimatePresence>
           </div>
 
-          {/* Right side - Image */}
-          {/* <div className="relative hidden md:flex justify-center items-center">
-             <AnimatePresence>
-                <motion.img
-                    key={activeSlide.id}
-                    src={activeSlide.productImage}
-                    alt="Featured Product"
-                    initial={{ opacity: 0, scale: 0.8, y: 50 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.8, y: -50 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="relative w-full max-w-lg drop-shadow-2xl"
-                    onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/500x500/FFFFFF/000000?text=Gadget'; }}
-                />
-             </AnimatePresence>
-          </div> */}
+   
         </div>
       </div>
-       {/* Navigation Dots */}
        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3">
             {slides.map((_, index) => (
                 <button

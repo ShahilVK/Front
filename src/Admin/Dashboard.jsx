@@ -269,7 +269,6 @@ const UsersTable = ({ users, onEdit, onBlock, onDelete }) => (
   </div>
 );
 
-
 const UserEditModal = ({ user, onClose, onSave }) => {
   const [formData, setFormData] = useState(user);
   useEffect(() => {
@@ -450,158 +449,161 @@ function Dashboard() {
     setShowEditModal(true);
   };
 
-const { filteredUsers, stats, chartData, salesByCategory } = useMemo(() => {
-  /* ---------------- SAFETY ---------------- */
-  if (!users || !orders) {
-    return {
-      filteredUsers: [],
-      stats: { revenue: "0.00", sales: 0, customers: 0, products: 0 },
-      chartData: { labels: [], datasets: [] },
-      salesByCategory: { labels: [], datasets: [] },
+  const { filteredUsers, stats, chartData, salesByCategory } = useMemo(() => {
+    /* ---------------- SAFETY ---------------- */
+    if (!users || !orders) {
+      return {
+        filteredUsers: [],
+        stats: { revenue: "0.00", sales: 0, customers: 0, products: 0 },
+        chartData: { labels: [], datasets: [] },
+        salesByCategory: { labels: [], datasets: [] },
+      };
+    }
+
+    const filtered = searchTerm
+      ? users.filter(
+          (u) =>
+            u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : users;
+
+    const customerUsers = users.filter((u) => u.role === "User");
+
+    // const completedOrders = orders.filter((o) =>
+    //   ["Shipped", "Delivered"].includes(o.status)
+    // );
+    const validOrders = orders.filter(
+  (o) => o.status !== "Cancelled"
+);
+
+    let totalRevenue = 0;
+
+    // completedOrders.forEach((order) => {
+    //   if (!Array.isArray(order.items)) return;
+
+    //   order.items.forEach((item) => {
+    //     const price = Number(item.price ?? item.product?.price ?? 0);
+    //     const qty = Number(item.quantity ?? 1);
+
+    //     if (!isNaN(price)) {
+    //       totalRevenue += price * qty;
+    //     }
+    //   });
+    // });
+    validOrders.forEach((order) => {
+  if (!Array.isArray(order.items)) return;
+
+  order.items.forEach((item) => {
+    const price = Number(item.price ?? 0);
+    const qty = Number(item.quantity ?? 1);
+
+    if (!isNaN(price)) {
+      totalRevenue += price * qty;
+    }
+  });
+});
+
+
+    const stats = {
+      revenue: totalRevenue.toFixed(2),
+      sales: validOrders.length, // ✅ FIXED
+      customers: customerUsers.length,
+      products: products.length,
     };
-  }
 
-  /* ---------------- USERS FILTER ---------------- */
-  const filtered = searchTerm
-    ? users.filter(
-        (u) =>
-          u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : users;
+    /* ---------------- REVENUE TREND ---------------- */
+    const revenueByDate = {};
 
-  const customerUsers = users.filter((u) => u.role === "User");
+    orders.filter(o => o.status !== "Cancelled").forEach((order) => {
+      const rawDate = order.createdAt || order.orderDate || order.date;
 
-  /* ---------------- TOTAL REVENUE ---------------- */
-  let totalRevenue = 0;
+      if (!rawDate || !Array.isArray(order.items)) return;
 
-  orders.forEach((order) => {
-    if (!Array.isArray(order.items)) return;
+      const dateKey = new Date(rawDate).toISOString().split("T")[0];
 
-    order.items.forEach((item) => {
-      const price = Number(
-        item.price ?? item.product?.price ?? 0
-      );
-      const qty = Number(item.quantity ?? 1);
+      order.items.forEach((item) => {
+        const price = Number(item.price ?? item.product?.price ?? 0);
+        const qty = Number(item.quantity ?? 1);
 
-      if (!isNaN(price)) {
-        totalRevenue += price * qty;
-      }
+        if (!isNaN(price)) {
+          revenueByDate[dateKey] = (revenueByDate[dateKey] || 0) + price * qty;
+        }
+      });
     });
-  });
 
-  const stats = {
-    revenue: totalRevenue.toFixed(2),
-    sales: orders.length,
-    customers: customerUsers.length,
-    products: products.length,
-  };
+    const sortedDates = Object.keys(revenueByDate).sort(
+      (a, b) => new Date(a) - new Date(b)
+    );
 
-  /* ---------------- REVENUE TREND ---------------- */
-  const revenueByDate = {};
+    const chartData = {
+      labels: sortedDates.map((d) =>
+        new Date(d).toLocaleDateString("en-IN", {
+          month: "short",
+          day: "numeric",
+        })
+      ),
+      datasets: [
+        {
+          label: "Daily Revenue",
+          data: sortedDates.map((d) => revenueByDate[d]),
+          borderColor: "#3B82F6",
+          backgroundColor: "rgba(59,130,246,0.1)",
+          fill: true,
+          tension: 0.4,
+        },
+      ],
+    };
 
-  orders.forEach((order) => {
-    const rawDate =
-      order.createdAt ||
-      order.orderDate ||
-      order.date;
+    /* ---------------- SALES BY CATEGORY ---------------- */
+    const categorySales = {};
 
-    if (!rawDate || !Array.isArray(order.items)) return;
+    orders.forEach((order) => {
+      if (!Array.isArray(order.items)) return;
 
-    const dateKey = new Date(rawDate)
-      .toISOString()
-      .split("T")[0];
+      order.items.forEach((item) => {
+        const category =
+          item.product?.category || item.category || "Uncategorized";
 
-    order.items.forEach((item) => {
-      const price = Number(
-        item.price ?? item.product?.price ?? 0
-      );
-      const qty = Number(item.quantity ?? 1);
+        const price = Number(item.price ?? item.product?.price ?? 0);
+        const qty = Number(item.quantity ?? 1);
 
-      if (!isNaN(price)) {
-        revenueByDate[dateKey] =
-          (revenueByDate[dateKey] || 0) + price * qty;
-      }
+        if (!isNaN(price)) {
+          categorySales[category] =
+            (categorySales[category] || 0) + price * qty;
+        }
+      });
     });
-  });
 
-  const sortedDates = Object.keys(revenueByDate).sort(
-    (a, b) => new Date(a) - new Date(b)
-  );
+    const salesByCategory = {
+      labels: Object.keys(categorySales),
+      datasets: [
+        {
+          label: "Sales",
+          data: Object.values(categorySales),
+          backgroundColor: [
+            "#EF4444",
+            "#F59E0B",
+            "#10B981",
+            "#3B82F6",
+            "#8B5CF6",
+          ],
+        },
+      ],
+    };
 
-  const chartData = {
-    labels: sortedDates.map((d) =>
-      new Date(d).toLocaleDateString("en-IN", {
-        month: "short",
-        day: "numeric",
-      })
-    ),
-    datasets: [
-      {
-        label: "Daily Revenue",
-        data: sortedDates.map((d) => revenueByDate[d]),
-        borderColor: "#3B82F6",
-        backgroundColor: "rgba(59,130,246,0.1)",
-        fill: true,
-        tension: 0.4,
-      },
-    ],
-  };
-
-  /* ---------------- SALES BY CATEGORY ---------------- */
-  const categorySales = {};
-
-  orders.forEach((order) => {
-    if (!Array.isArray(order.items)) return;
-
-    order.items.forEach((item) => {
-      const category =
-        item.product?.category ||
-        item.category ||
-        "Uncategorized";
-
-      const price = Number(
-        item.price ?? item.product?.price ?? 0
-      );
-      const qty = Number(item.quantity ?? 1);
-
-      if (!isNaN(price)) {
-        categorySales[category] =
-          (categorySales[category] || 0) + price * qty;
-      }
-    });
-  });
-
-  const salesByCategory = {
-    labels: Object.keys(categorySales),
-    datasets: [
-      {
-        label: "Sales",
-        data: Object.values(categorySales),
-        backgroundColor: [
-          "#EF4444",
-          "#F59E0B",
-          "#10B981",
-          "#3B82F6",
-          "#8B5CF6",
-        ],
-      },
-    ],
-  };
-
-  return {
-    filteredUsers: filtered,
-    stats,
-    chartData,
-    salesByCategory,
-  };
-}, [users, orders, products, searchTerm]);
+    return {
+      filteredUsers: filtered,
+      stats,
+      chartData,
+      salesByCategory,
+    };
+  }, [users, orders, products, searchTerm]);
 
   return (
     <AuthContext.Provider value={{ user: { name: "Admin" } }}>
-
       <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-<Toaster position="top-right" />
+        <Toaster position="top-right" />
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           onMouseEnter={() => setIsSidebarCollapsed(false)}
@@ -702,7 +704,7 @@ const { filteredUsers, stats, chartData, salesByCategory } = useMemo(() => {
               onDelete={handleDeleteUser}
             />
           </div>
-    <Footer />
+          <Footer />
         </main>
         {showEditModal && (
           <UserEditModal
