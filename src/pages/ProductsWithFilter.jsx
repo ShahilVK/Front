@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../Api/Axios_Instance";
@@ -6,14 +5,22 @@ import api from "../Api/Axios_Instance";
 const ProductCategories = () => {
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
+  const API_BASE_URL = "https://localhost:7155";
+
+  const buildImageUrl = (url) => {
+    if (!url) return "/assets/no-image.png";
+    if (url.startsWith("http")) return url;
+    return `${API_BASE_URL}/${url.replace(/^\/+/, "")}`;
+  };
 
   useEffect(() => {
-    api.get("/products")
+    api
+      .get("/products")
       .then((res) => {
         const categoryMap = {};
         res.data.data.forEach((p) => {
           if (!categoryMap[p.category]) {
-            categoryMap[p.category] = p.image;
+            categoryMap[p.category] = p.imageUrl || p.image || "";
           }
         });
 
@@ -53,10 +60,11 @@ const ProductCategories = () => {
 
               {/* Category Content */}
               <img
-                src={cat.image}
+                src={buildImageUrl(cat.image)}
                 alt={cat.name}
                 className="w-24 h-24 object-contain mb-4 relative z-10"
               />
+
               <h3 className="text-gray-900 font-bold text-lg md:text-xl relative z-10">
                 {cat.name}
               </h3>

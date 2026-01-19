@@ -24,7 +24,7 @@ import { useAuth } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import AdminProducts from "./Admin/AdminProducts";
 import AdminOrders from "./Admin/AdminOrders";
-import AdminUsers from "./Admin/Adminusers";
+import AdminUsers from "./Admin/AdminUsers";
 import { AdminSettings } from "./Admin/AdminSettings";
 import TopProducts from "./pages/TopProducts";
 

@@ -191,6 +191,21 @@ function Product() {
   const getProductImage = (product) =>
     product.imageUrl || product.image || null;
 
+
+  const saveRecentlyViewed = (product) => {
+  const key = "recentlyViewedProducts";
+  const stored = JSON.parse(localStorage.getItem(key)) || [];
+
+  // remove duplicate
+  const filtered = stored.filter((p) => p.id !== product.id);
+
+  // add to top
+  const updated = [product, ...filtered].slice(0, 6);
+
+  localStorage.setItem(key, JSON.stringify(updated));
+};
+
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Navbar />

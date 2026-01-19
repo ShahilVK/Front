@@ -10,11 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@heroicons/react": "^2.2.0",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
     "chart.js": "^4.5.0",
     "framer-motion": "^12.23.19",
+    "gsap": "^3.14.2",
     "lucide": "^0.544.0",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
