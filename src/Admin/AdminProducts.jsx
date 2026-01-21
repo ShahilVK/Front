@@ -632,9 +632,7 @@ const AdminProducts = () => {
               </div>
             )}
             {/*                   <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Image URL</label><input type="text" name="image" value={editingProduct ? editingProduct.image : newProductData.image} onChange={editingProduct ? handleEditInputChange : handleAddInputChange} className="mt-1 block w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" required/></div> */}
-                         {" "}
           </div>
-                       {" "}
           <div className="mt-6 flex justify-end gap-3">
                              {" "}
             <button
@@ -690,13 +688,9 @@ const AdminProducts = () => {
                 "{productToDelete?.name}"?
               </p>
                                    <p>This action cannot be undone.</p>         
-                     
             </div>
-                       {" "}
           </div>
-                     {" "}
           <div className="mt-6 grid grid-cols-2 gap-3">
-                             
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(false)}
@@ -704,7 +698,6 @@ const AdminProducts = () => {
             >
               Cancel
             </button>
-                             
             <button
               type="button"
               onClick={confirmDeleteProduct}
@@ -712,13 +705,9 @@ const AdminProducts = () => {
             >
               Delete
             </button>
-                       {" "}
           </div>
-                 {" "}
         </div>
-             {" "}
       </Modal>
-         {" "}
     </div>
   );
 };

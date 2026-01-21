@@ -470,27 +470,14 @@ function Dashboard() {
 
     const customerUsers = users.filter((u) => u.role === "User");
 
-    // const completedOrders = orders.filter((o) =>
-    //   ["Shipped", "Delivered"].includes(o.status)
-    // );
+
     const validOrders = orders.filter(
   (o) => o.status !== "Cancelled"
 );
 
     let totalRevenue = 0;
 
-    // completedOrders.forEach((order) => {
-    //   if (!Array.isArray(order.items)) return;
 
-    //   order.items.forEach((item) => {
-    //     const price = Number(item.price ?? item.product?.price ?? 0);
-    //     const qty = Number(item.quantity ?? 1);
-
-    //     if (!isNaN(price)) {
-    //       totalRevenue += price * qty;
-    //     }
-    //   });
-    // });
     validOrders.forEach((order) => {
   if (!Array.isArray(order.items)) return;
 

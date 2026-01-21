@@ -312,7 +312,6 @@ function ProductDetail({ product, onBack }) {
     }
   };
 
-  /* ✅ FIXED: BUY NOW */
   const handleBuyNow = () => {
     if (!user) return navigate("/login");
 
@@ -358,7 +357,6 @@ function ProductDetail({ product, onBack }) {
         }}
       />
 
-      {/* Navigation Bar Placeholder (For visual balance) */}
       <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center sticky top-0 z-40 bg-[#FDFDFD]/80 backdrop-blur-md">
         <button
           onClick={onBack}
@@ -376,7 +374,6 @@ function ProductDetail({ product, onBack }) {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-4 lg:py-8">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-24">
           
-          {/* ================= LEFT: IMMERSIVE IMAGE ================= */}
           <div className="lg:w-[55%] relative">
             <motion.div 
               initial={{ y: 20, opacity: 0 }}
@@ -384,7 +381,6 @@ function ProductDetail({ product, onBack }) {
               transition={{ delay: 0.2, duration: 0.6 }}
               className="relative aspect-square lg:aspect-[4/5] w-full bg-[#F3F3F3] rounded-[2px] overflow-hidden group"
             >
-                {/* Subtle Gradient Background Blob */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-white/40 blur-3xl rounded-full pointer-events-none" />
                 
                 <img
@@ -393,7 +389,6 @@ function ProductDetail({ product, onBack }) {
                   className="absolute inset-0 w-full h-full object-contain p-12 lg:p-20 transition-transform duration-700 ease-out group-hover:scale-110"
                 />
                 
-                {/* Floating Badge */}
                 {product.stock <= 0 && (
                     <div className="absolute top-6 left-6 bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-widest">
                         Sold Out
@@ -402,7 +397,6 @@ function ProductDetail({ product, onBack }) {
             </motion.div>
           </div>
 
-          {/* ================= RIGHT: PRODUCT CONTEXT ================= */}
           <div className="lg:w-[45%] flex flex-col pt-4 lg:pt-12">
             
             <motion.div
@@ -410,7 +404,6 @@ function ProductDetail({ product, onBack }) {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
             >
-                {/* Breadcrumbs / Category */}
                 <div className="flex items-center gap-2 mb-6">
                     <span className="text-xs font-bold tracking-[0.2em] uppercase text-gray-400">
                         {product.category || "Collection"}
@@ -418,12 +411,10 @@ function ProductDetail({ product, onBack }) {
                     <div className="h-px w-8 bg-gray-300"></div>
                 </div>
 
-                {/* Title */}
                 <h1 className="text-4xl lg:text-6xl font-medium tracking-tight text-gray-900 mb-4 leading-[1.1]">
                     {product.name}
                 </h1>
 
-                {/* Price & Rating Row */}
                 <div className="flex items-center justify-between mb-8 border-b border-gray-100 pb-8">
                     <div className="flex items-baseline gap-2">
                         <span className="text-3xl font-light tracking-tight">₹{basePrice.toFixed(2)}</span>
@@ -441,7 +432,6 @@ function ProductDetail({ product, onBack }) {
                     </div>
                 </div>
 
-                {/* Description */}
                 <div className="mb-10">
                     <p className="text-gray-600 text-lg leading-relaxed font-light">
                         {product.smallDescription || 
@@ -449,10 +439,8 @@ function ProductDetail({ product, onBack }) {
                     </p>
                 </div>
 
-                {/* Controls Section */}
                 <div className="space-y-8">
                     
-                    {/* Quantity - Minimalist Line Style */}
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold uppercase tracking-wider text-gray-900">Quantity</span>
                         <div className="flex items-center gap-6 border-b border-gray-200 pb-2">
@@ -474,20 +462,17 @@ function ProductDetail({ product, onBack }) {
                         </div>
                     </div>
 
-                    {/* Total Price Calculation (Subtle) */}
                     <div className="flex justify-between items-center text-sm text-gray-500">
                         <span>Total Estimate</span>
                         <span className="text-xl font-medium text-gray-900">₹{totalPrice}</span>
                     </div>
 
-                    {/* Stock Status Text */}
                     {product.stock > 0 && product.stock < 10 && (
                         <p className="text-xs text-red-600 font-medium animate-pulse">
                             Only {product.stock} units remaining
                         </p>
                     )}
 
-                    {/* Action Buttons - High Contrast */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                         <button
                             onClick={addToCart}
