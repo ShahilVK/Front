@@ -376,72 +376,105 @@ const Payment = () => {
     setBillingInfo({ ...billingInfo, [e.target.name]: e.target.value });
 
   const handlePayment = async () => {
-    const { name, phone, address } = billingInfo;
+  const { name, phone, address } = billingInfo;
 
-    if (!name || !phone || !address) {
-      return toast.error("Please fill all billing details");
+  if (!name || !phone || !address) {
+    return toast.error("Please fill all billing details");
+  }
+
+  try {
+    // ✅ CASH ON DELIVERY FLOW (NO RAZORPAY)
+    if (paymentMethod === "Cash On Delivery") {
+      if (buyNowItem) {
+        await api.post("/orders/Direct Order", {
+          productId: buyNowItem.productId,
+          quantity: buyNowItem.quantity,
+          fullName: name,
+          phoneNumber: phone,
+          addressLine: address,
+          city: "NA",
+          state: "NA",
+          postalCode: "000000",
+          country: "India",
+        });
+      } else {
+        await api.post("/orders/Order-Inside-Cart", {
+          fullName: name,
+          phoneNumber: phone,
+          addressLine: address,
+          city: "NA",
+          state: "NA",
+          postalCode: "000000",
+          country: "India",
+        });
+      }
+
+      toast.success("Order placed successfully (Cash on Delivery)");
+      window.dispatchEvent(new Event("cartUpdated"));
+      navigate("/ordersuccess");
+      return; // ⛔ STOP HERE — NO RAZORPAY
     }
 
-    try {
-      const paymentRes = await api.post(
-        "/payments/razorpay/create-order",
-        { amount: totalAmount }
-      );
+    // ✅ ONLINE PAYMENT (RAZORPAY)
+    const paymentRes = await api.post(
+      "/payments/razorpay/create-order",
+      { amount: totalAmount }
+    );
 
-      const { razorpayOrderId, amount } = paymentRes.data.data;
-      const loaded = await loadRazorpay();
-      if (!loaded) return toast.error("Razorpay SDK failed");
+    const { razorpayOrderId, amount } = paymentRes.data.data;
+    const loaded = await loadRazorpay();
+    if (!loaded) return toast.error("Razorpay SDK failed");
 
-      const options = {
-        key: "rzp_test_S4s58ea2F8PpWT",
-        amount: amount * 100,
-        currency: "INR",
-        name: "TekTrov",
-        description: "Order Payment",
-        order_id: razorpayOrderId,
-        handler: async function (response) {
-            if (buyNowItem) {
-                await api.post("/orders/Direct Order", {
-                    productId: buyNowItem.productId,
-                    quantity: buyNowItem.quantity,
-                    fullName: name,
-                    phoneNumber: phone,
-                    addressLine: address,
-                    city: "NA",
-                    state: "NA",
-                    postalCode: "000000",
-                    country: "India",
-                });
-            } else {
-                await api.post("/orders/Order-Inside-Cart", {
-                    fullName: name,
-                    phoneNumber: phone,
-                    addressLine: address,
-                    city: "NA",
-                    state: "NA",
-                    postalCode: "000000",
-                    country: "India",
-                });
-            }
+    const options = {
+      key: "rzp_test_S4s58ea2F8PpWT",
+      amount: amount * 100,
+      currency: "INR",
+      name: "TekTrov",
+      description: "Order Payment",
+      order_id: razorpayOrderId,
+      handler: async function () {
+        if (buyNowItem) {
+          await api.post("/orders/Direct Order", {
+            productId: buyNowItem.productId,
+            quantity: buyNowItem.quantity,
+            fullName: name,
+            phoneNumber: phone,
+            addressLine: address,
+            city: "NA",
+            state: "NA",
+            postalCode: "000000",
+            country: "India",
+          });
+        } else {
+          await api.post("/orders/Order-Inside-Cart", {
+            fullName: name,
+            phoneNumber: phone,
+            addressLine: address,
+            city: "NA",
+            state: "NA",
+            postalCode: "000000",
+            country: "India",
+          });
+        }
 
-            toast.success("Payment successful!");
-            window.dispatchEvent(new Event("cartUpdated"));
-            navigate("/ordersuccess");
+        toast.success("Payment successful!");
+        window.dispatchEvent(new Event("cartUpdated"));
+        navigate("/ordersuccess");
+      },
+      modal: {
+        ondismiss: function () {
+          toast.error("Payment cancelled");
         },
-        modal: {
-          ondismiss: function () {
-            toast.error("Payment cancelled");
-          }
-        },
-        theme: { color: "#000000" }, 
-      };
+      },
+      theme: { color: "#000000" },
+    };
 
-      new window.Razorpay(options).open();
-    } catch (err) {
-      console.error(err);
-      toast.error("Payment failed");
-    }
-  };
+    new window.Razorpay(options).open();
+  } catch (err) {
+    console.error(err);
+    toast.error("Payment failed");
+  }
+};
 
   const getProductImage = (item) => {
     return item.imageUrl || item.image || "";
@@ -451,16 +484,13 @@ const Payment = () => {
     return parseFloat(String(price).replace(/[^\d.]/g, "")).toFixed(2);
   };
 
-  // --- Ultra-Premium UI Render ---
   return (
     <div className="bg-[#f2f4f6] min-h-screen flex flex-col font-sans selection:bg-yellow-100">
       <Navbar />
       
-      {/* Main Content Area */}
       <div className="flex-grow w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-10 mt-16">
         <Toaster position="top-center" toastOptions={{ duration: 4000, style: { background: '#333', color: '#fff' } }} />
         
-        {/* Page Title & Breadcrumb */}
         <div className="mb-10 flex flex-col items-center justify-center text-center">
             <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
               Checkout
@@ -476,10 +506,8 @@ const Payment = () => {
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start">
           
-          {/* Left Column: Forms */}
           <div className="flex-1 w-full space-y-8">
             
-            {/* 1. Contact & Shipping */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200/60 p-6 md:p-8 relative overflow-hidden group">
                <div className="absolute top-0 left-0 w-1 h-full bg-black scale-y-0 group-hover:scale-y-100 transition-transform duration-300 ease-in-out"></div>
                
@@ -491,7 +519,6 @@ const Payment = () => {
                </div>
                
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {/* Name */}
                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide ml-1">Full Name</label>
                     <div className="relative group/input">

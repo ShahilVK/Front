@@ -336,48 +336,41 @@ function AdminUsers() {
   };
   const renderSkeletonLoader = () => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-4 animate-pulse">
-             {" "}
       {[...Array(5)].map((_, i) => (
         <div key={i} className="flex items-center space-x-4">
-                         {" "}
           <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                         {" "}
+
           <div className="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                         {" "}
+
           <div className="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                         {" "}
+
           <div className="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
-                     {" "}
         </div>
       ))}
-         {" "}
     </div>
   );
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-            <Toaster position="top-right" />
+      <Toaster position="top-right" />
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         onMouseEnter={() => setIsSidebarCollapsed(false)}
         onMouseLeave={() => setIsSidebarCollapsed(true)}
       />
-           {" "}
+
       <div className="flex-1 flex flex-col overflow-hidden">
-               {" "}
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-                   {" "}
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">
             Manage Users
           </h1>
-                   {" "}
+
           <div className="relative mb-6 w-full max-w-sm">
-                       {" "}
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               size={20}
             />
-                       {" "}
+
             <input
               type="text"
               placeholder="Search by name or email..."
@@ -388,7 +381,7 @@ function AdminUsers() {
               }}
               className="w-full p-2.5 pl-10 pr-10 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-                       {" "}
+
             {search && (
               <button
                 onClick={() => setSearch("")}
@@ -397,14 +390,12 @@ function AdminUsers() {
                 <X size={18} />
               </button>
             )}
-                     {" "}
           </div>
-                   {" "}
+
           {isLoading ? (
             renderSkeletonLoader()
           ) : (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-x-auto">
-                           {" "}
               <table className="w-full text-left">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
@@ -512,41 +503,34 @@ function AdminUsers() {
               </table>
               {totalPages > 1 && (
                 <div className="p-4 flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
-                                     {" "}
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                     className="flex items-center gap-1 px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50"
                   >
-                                            <ChevronLeft size={16} /> Previous  
-                                     {" "}
+                    <ChevronLeft size={16} /> Previous
                   </button>
-                                     {" "}
+
                   <span>
                     Page {currentPage} of {totalPages}
                   </span>
-                                     {" "}
+
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     className="flex items-center gap-1 px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50"
                   >
-                                            Next <ChevronRight size={16} />     
-                                 {" "}
+                    Next <ChevronRight size={16} />
                   </button>
-                                 {" "}
                 </div>
               )}
-                         {" "}
             </div>
           )}
-                 {" "}
         </main>
-                <Footer />     {" "}
+        <Footer />
       </div>
-           {" "}
+
       <Modal isOpen={!!editingUser} onClose={() => setEditingUser(null)}>
-               {" "}
         {editingUser && (
           <UserEditForm
             user={editingUser}
@@ -554,43 +538,35 @@ function AdminUsers() {
             onCancel={() => setEditingUser(null)}
           />
         )}
-             {" "}
       </Modal>
-           {" "}
+
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
       >
-               {" "}
         <div className="p-6">
-                     {" "}
           <div className="text-center">
-                             
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
               <Trash2 className="h-6 w-6 text-red-600" />
             </div>
-                             
+
             <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
               Delete User
             </h3>
-                             
+
             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                   
               <p>
-                Are you sure you want to delete{" "}
+                Are you sure you want to delete
                 <span className="font-semibold text-gray-700">
                   {userToDelete?.name}
                 </span>
                 ?
               </p>
-                                   <p>This action cannot be undone.</p>         
-                     
+              <p>This action cannot be undone.</p>
             </div>
-                       {" "}
           </div>
-                     {" "}
+
           <div className="mt-6 grid grid-cols-2 gap-3">
-                             
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(false)}
@@ -598,7 +574,7 @@ function AdminUsers() {
             >
               Cancel
             </button>
-                             
+
             <button
               type="button"
               onClick={confirmDeleteUser}
@@ -606,13 +582,9 @@ function AdminUsers() {
             >
               Delete
             </button>
-                       {" "}
           </div>
-                 {" "}
         </div>
-             {" "}
       </Modal>
-         {" "}
     </div>
   );
 }

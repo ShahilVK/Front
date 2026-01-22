@@ -712,7 +712,9 @@ function Product() {
       if (product.stock <= 0) {
         return toast.error("Product is out of stock");
       }
-      await api.post(`/cart/${product.id}`);
+      await api.post(`/cart/${product.id}`,{
+        quantity: 1,
+      });
       window.dispatchEvent(new Event("cartUpdated"));
       toast.success("Added to cart!");
     } catch (error) {

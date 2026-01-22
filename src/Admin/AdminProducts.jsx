@@ -34,6 +34,7 @@ const Modal = ({ children, isOpen, onClose }) => {
   );
 };
 
+
 const Footer = () => (
   <footer className="bg-white dark:bg-gray-800 p-4 text-center text-sm text-gray-500 dark:text-gray-400 border-t dark:border-gray-700 mt-auto">
     © {new Date().getFullYear()} TekTrov. All rights reserved.
@@ -130,6 +131,9 @@ const AdminProducts = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage] = useState(8);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [showDeleted, setShowDeleted] = useState(false);
+
+  
 
   const parsePrice = (price) =>
     parseFloat(String(price).replace(/[^\d.]/g, "")) || 0;
@@ -137,20 +141,38 @@ const AdminProducts = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [showDeleted]);
 
+  // const fetchProducts = async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const res = await api.get("/admin/products");
+  //     setProducts(res.data.data || []);
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to fetch products");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
   const fetchProducts = async () => {
-    setIsLoading(true);
-    try {
-      const res = await api.get("/admin/products");
-      setProducts(res.data.data || []);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch products");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  setIsLoading(true);
+  try {
+    const res = await api.get("/admin/products");
+    const allProducts = res.data.data || [];
+
+    setProducts(
+      showDeleted
+        ? allProducts.filter(p => p.isDeleted)
+        : allProducts.filter(p => !p.isDeleted)
+    );
+  } catch (err) {
+    toast.error("Failed to fetch products");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleDeleteRequest = (product) => {
     setProductToDelete(product);
@@ -214,7 +236,8 @@ const AdminProducts = () => {
     try {
       const formData = new FormData();
       formData.append("name", newProductData.name);
-      formData.append("price", Number(newProductData.price));
+formData.append("description", newProductData.description); 
+     formData.append("price", Number(newProductData.price));
       formData.append("category", newProductData.category);
       formData.append("stock", Number(newProductData.stock));
 
@@ -272,6 +295,8 @@ const AdminProducts = () => {
     </div>
   );
 
+  
+
   const getStockStatus = (stock) => {
     if (stock === 0)
       return {
@@ -316,6 +341,13 @@ const AdminProducts = () => {
             >
                             <Plus size={20} /> Add Product            {" "}
             </button>
+            <button
+  onClick={() => setShowDeleted(prev => !prev)}
+  className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-200 hover:bg-gray-300"
+>
+  {showDeleted ? "Show Active Products" : "Show Deleted Products"}
+</button>
+
                      {" "}
           </div>
                    {" "}
@@ -431,7 +463,7 @@ const AdminProducts = () => {
           </td>
 
           <td className="p-3 text-center">
-            <div className="flex justify-center gap-2">
+            {/* <div className="flex justify-center gap-2">
               <button
                 onClick={() => handleOpenEditModal(p)}
                 className="p-2 text-gray-400 hover:bg-blue-100 hover:text-blue-500 rounded-full transition active:scale-90"
@@ -444,7 +476,34 @@ const AdminProducts = () => {
               >
                 <Trash2 size={16} />
               </button>
-            </div>
+            </div> */}
+            <div className="flex justify-center gap-2">
+  {!p.isDeleted ? (
+    <>
+      <button
+        onClick={() => handleOpenEditModal(p)}
+        className="p-2 text-gray-400 hover:bg-blue-100 hover:text-blue-500 rounded-full"
+      >
+        <Edit2 size={16} />
+      </button>
+
+      <button
+        onClick={() => handleDeleteRequest(p)}
+        className="p-2 text-gray-400 hover:bg-red-100 hover:text-red-500 rounded-full"
+      >
+        <Trash2 size={16} />
+      </button>
+    </>
+  ) : (
+    <button
+      onClick={() => handleRestoreProduct(p)}
+      className="px-3 py-1 text-xs font-bold text-green-700 bg-green-100 rounded-full hover:bg-green-200"
+    >
+      Restore
+    </button>
+  )}
+</div>
+
           </td>
         </tr>
       ))
@@ -615,6 +674,20 @@ const AdminProducts = () => {
                 required
               />
             </div>
+            <div>
+  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+    Description
+  </label>
+  <textarea
+    name="description"
+    value={newProductData.description}
+    onChange={handleAddInputChange}
+    rows={3}
+    className="mt-1 block w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+    required
+  />
+</div>
+
             {!editingProduct && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
