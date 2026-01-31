@@ -414,18 +414,12 @@ function AdminOrders() {
                         </td>
 
                         <td className="p-3 text-center">
-                          <div className="flex justify-center gap-2">
+                          <div className="flex justify-center">
                             <button
                               onClick={() => handleViewDetails(o)}
                               className="p-2 text-gray-400 hover:bg-blue-100 hover:text-blue-500 rounded-full transition"
                             >
                               <FileText size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteRequest(o)}
-                              className="p-2 text-gray-400 hover:bg-red-100 hover:text-red-500 rounded-full transition"
-                            >
-                              <Trash2 size={16} />
                             </button>
                           </div>
                         </td>

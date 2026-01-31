@@ -143,18 +143,6 @@ const AdminProducts = () => {
     fetchProducts();
   }, [showDeleted]);
 
-  // const fetchProducts = async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     const res = await api.get("/admin/products");
-  //     setProducts(res.data.data || []);
-  //   } catch (err) {
-  //     console.error(err);
-  //     toast.error("Failed to fetch products");
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
   const fetchProducts = async () => {
   setIsLoading(true);
   try {
@@ -193,6 +181,18 @@ const AdminProducts = () => {
       setProductToDelete(null);
     }
   };
+  const handleRestoreProduct = async (product) => {
+  try {
+    await api.patch(`/admin/products/${product.id}/restore`);
+
+    toast.success(`Product "${product.name}" restored successfully`);
+    fetchProducts();
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to restore product");
+  }
+};
+
 
   const handleOpenEditModal = (product) => {
     setEditingProduct({ ...product, price: parsePrice(product.price) });
@@ -318,28 +318,28 @@ formData.append("description", newProductData.description);
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-            <Toaster position="top-right" containerClassName="text-sm" />
+      <Toaster position="top-right" containerClassName="text-sm" />
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         onMouseEnter={() => setIsSidebarCollapsed(false)}
         onMouseLeave={() => setIsSidebarCollapsed(true)}
       />
-           {" "}
+      
       <div className="flex-1 flex flex-col overflow-hidden">
-               {" "}
+           
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-                   {" "}
+                
           <div className="flex justify-between items-center mb-6">
-                       {" "}
+                     
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
               Manage Products
             </h1>
-                       {" "}
+                     
             <button
               onClick={handleOpenAddModal}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-all active:scale-95"
             >
-                            <Plus size={20} /> Add Product            {" "}
+                 <Plus size={20} /> Add Product          
             </button>
             <button
   onClick={() => setShowDeleted(prev => !prev)}
@@ -348,16 +348,16 @@ formData.append("description", newProductData.description);
   {showDeleted ? "Show Active Products" : "Show Deleted Products"}
 </button>
 
-                     {" "}
+                  
           </div>
-                   {" "}
+                
           <div className="relative mb-6 w-full max-w-sm">
-                       {" "}
+                     
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               size={20}
             />
-                       {" "}
+                     
             <input
               type="text"
               placeholder="Search products by name..."
@@ -368,7 +368,7 @@ formData.append("description", newProductData.description);
               }}
               className="w-full p-2.5 pl-10 pr-10 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-                       {" "}
+                     
             {search && (
               <button
                 onClick={() => setSearch("")}
@@ -377,14 +377,14 @@ formData.append("description", newProductData.description);
                 <X size={18} />
               </button>
             )}
-                     {" "}
+                  
           </div>
-                               {" "}
+                
           {isLoading ? (
             renderSkeletonLoader()
           ) : (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-x-auto">
-                           {" "}
+                 
         <table className="w-full text-left">
   <thead className="bg-gray-50 dark:bg-gray-700">
     <tr>
@@ -463,20 +463,7 @@ formData.append("description", newProductData.description);
           </td>
 
           <td className="p-3 text-center">
-            {/* <div className="flex justify-center gap-2">
-              <button
-                onClick={() => handleOpenEditModal(p)}
-                className="p-2 text-gray-400 hover:bg-blue-100 hover:text-blue-500 rounded-full transition active:scale-90"
-              >
-                <Edit2 size={16} />
-              </button>
-              <button
-                onClick={() => handleDeleteRequest(p)}
-                className="p-2 text-gray-400 hover:bg-red-100 hover:text-red-500 rounded-full transition active:scale-90"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div> */}
+          
             <div className="flex justify-center gap-2">
   {!p.isDeleted ? (
     <>
@@ -518,7 +505,7 @@ formData.append("description", newProductData.description);
                     disabled={currentPage === 1}
                     className="flex items-center gap-1 px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                                            <ChevronLeft size={16} /> Previous  
+                             <ChevronLeft size={16} /> Previous   
                   </button>
                   <span>
                     Page {currentPage} of {totalPages}
@@ -528,17 +515,17 @@ formData.append("description", newProductData.description);
                     disabled={currentPage === totalPages}
                     className="flex items-center gap-1 px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                                            Next <ChevronRight size={16} />     
-                                 {" "}
+                             Next <ChevronRight size={16} />        
+                       
                   </button>
                 </div>
               )}
             </div>
           )}
         </main>
-              <Footer />     {" "}
+        <Footer />         
       </div>
-           {" "}
+      
       <Modal
         isOpen={isAddModalOpen || !!editingProduct}
         onClose={() => {
@@ -570,13 +557,13 @@ formData.append("description", newProductData.description);
               />
             </div>
           )}
-                       {" "}
+             
           <div className="flex justify-between items-center mb-4">
-                             {" "}
+                     
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
               {editingProduct ? "Edit Product" : "Add New Product"}
             </h2>
-                             {" "}
+                     
             <button
               type="button"
               onClick={() => {
@@ -587,11 +574,11 @@ formData.append("description", newProductData.description);
             >
               <X size={24} />
             </button>
-                         {" "}
+               
           </div>
-                       {" "}
+             
           <div className="space-y-4">
-                             {" "}
+                     
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Product Name
@@ -609,9 +596,9 @@ formData.append("description", newProductData.description);
                 required
               />
             </div>
-                             {" "}
+                     
             <div className="grid grid-cols-2 gap-4">
-                                 {" "}
+                          
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Price (₹)
@@ -632,7 +619,7 @@ formData.append("description", newProductData.description);
                   step="0.01"
                 />
               </div>
-                                 {" "}
+                          
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Stock Quantity
@@ -652,9 +639,9 @@ formData.append("description", newProductData.description);
                   required
                 />
               </div>
-                               {" "}
+                       
             </div>
-                             {" "}
+                     
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Category
@@ -704,10 +691,10 @@ formData.append("description", newProductData.description);
                 />
               </div>
             )}
-            {/*                   <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Image URL</label><input type="text" name="image" value={editingProduct ? editingProduct.image : newProductData.image} onChange={editingProduct ? handleEditInputChange : handleAddInputChange} className="mt-1 block w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" required/></div> */}
+            {/*          <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Image URL</label><input type="text" name="image" value={editingProduct ? editingProduct.image : newProductData.image} onChange={editingProduct ? handleEditInputChange : handleAddInputChange} className="mt-1 block w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" required/></div> */}
           </div>
           <div className="mt-6 flex justify-end gap-3">
-                             {" "}
+                     
             <button
               type="button"
               onClick={() => {
@@ -718,7 +705,7 @@ formData.append("description", newProductData.description);
             >
               Cancel
             </button>
-                             {" "}
+                     
             <button
               type="submit"
               className={`px-4 py-2 text-white rounded-md ${
@@ -729,38 +716,38 @@ formData.append("description", newProductData.description);
             >
               {editingProduct ? "Save Changes" : "Add Product"}
             </button>
-                         {" "}
+               
           </div>
-                   {" "}
+                
         </form>
-             {" "}
+        
       </Modal>
-           {" "}
+      
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
       >
-               {" "}
+           
         <div className="p-6">
-                     {" "}
+                   
           <div className="text-center">
-                             
+                    
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                                   <Trash2 className="h-6 w-6 text-red-600" /> 
-                             
+                            <Trash2 className="h-6 w-6 text-red-600" />  
+                   
             </div>
-                             
+                    
             <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
               Delete Product
             </h3>
-                             
+                    
             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                   <p>Are you sure you want to delete</p>       
-                           
+                            <p>Are you sure you want to delete</p>           
+                         
               <p className="font-semibold text-gray-700 dark:text-gray-200">
                 "{productToDelete?.name}"?
               </p>
-                                   <p>This action cannot be undone.</p>         
+                            <p>This action cannot be undone.</p>     
             </div>
           </div>
           <div className="mt-6 grid grid-cols-2 gap-3">

@@ -242,22 +242,26 @@ const UsersTable = ({ users, onEdit, onBlock, onDelete }) => (
                     <Edit size={16} />
                   </button>
 
-                  <button
+                  {/* <button
                     onClick={() => onBlock(u)}
                     className="p-2 text-gray-400 hover:bg-yellow-100 hover:text-yellow-500 rounded-full transition"
-                  >
+                  > */}
+                  <button
+  onClick={() => onBlock(u)}
+  disabled={u.role === "Admin"}
+  className={`p-2 rounded-full transition ${
+    u.role === "Admin"
+      ? "text-gray-300 cursor-not-allowed"
+      : "text-gray-400 hover:bg-yellow-100 hover:text-yellow-500"
+  }`}
+  title={u.role === "Admin" ? "Admin cannot be blocked" : "Toggle block"}
+>
+
                     {u.isBlocked ? (
                       <UserCheck size={16} />
                     ) : (
                       <UserX size={16} />
                     )}
-                  </button>
-
-                  <button
-                    onClick={() => onDelete(u.id)}
-                    className="p-2 text-gray-400 hover:bg-red-100 hover:text-red-500 rounded-full transition"
-                  >
-                    <Trash2 size={16} />
                   </button>
                 </div>
               </td>
@@ -419,6 +423,11 @@ function Dashboard() {
   };
 
   const handleToggleBlockUser = async (user) => {
+
+      if (user.role === "Admin") {
+    toast.error("Admin accounts cannot be blocked");
+    return;
+  }
     try {
       await api.patch(`/admin/users/${user.id}/block-toggle`);
       toast.success(user.isBlocked ? "User unblocked" : "User blocked");

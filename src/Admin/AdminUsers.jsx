@@ -488,12 +488,12 @@ function AdminUsers() {
                               )}
                             </button>
 
-                            <button
+                            {/* <button
                               onClick={() => handleDeleteRequest(u)}
                               className="p-2 text-gray-400 hover:bg-red-100 hover:text-red-500 rounded-full transition"
                             >
                               <Trash2 size={16} />
-                            </button>
+                            </button> */}
                           </div>
                         </td>
                       </tr>
