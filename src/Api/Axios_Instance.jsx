@@ -79,8 +79,6 @@ api.interceptors.response.use(
       } catch (error) {
         processQueue(error, null);
         localStorage.removeItem("accessToken");
-  //       alert("Your account has been blocked by admin");
-  // window.location.href = "/login";
         return Promise.reject(error);
       } finally {
         isRefreshing = false;

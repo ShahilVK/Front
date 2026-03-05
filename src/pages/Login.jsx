@@ -20,6 +20,7 @@ function Login() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const containerRef = useRef(null);
 
@@ -120,7 +121,8 @@ function Login() {
 
             <div className="mono-item group relative">
               <input
-                type="password"
+                // type="password"
+                type={showPassword ? "text" : "password"}
                 className="peer w-full bg-transparent border-b border-gray-200 text-black text-lg py-3 pl-0 focus:border-black focus:outline-none transition-all placeholder-transparent"
                 placeholder="Password"
                 id="password"
@@ -131,7 +133,10 @@ function Login() {
               <label htmlFor="password" className="absolute left-0 -top-3 text-xs text-gray-400 peer-placeholder-shown:text-base peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 peer-focus:-top-3 peer-focus:text-xs peer-focus:text-black transition-all cursor-text">
                 Password
               </label>
-              <Lock className="absolute right-0 top-3 h-5 w-5 text-gray-300 peer-focus:text-black transition-colors" />
+              <Lock
+  onClick={() => setShowPassword(!showPassword)}
+  className="absolute right-0 top-3 h-5 w-5 text-gray-300 peer-focus:text-black transition-colors cursor-pointer"
+/>
             </div>
 
             <div className="mono-item flex items-center justify-between pt-2">
